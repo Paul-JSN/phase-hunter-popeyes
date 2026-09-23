@@ -31,12 +31,13 @@ NAVY, TEAL, MUTED, LINE, WARM = (colors.HexColor(c) for c in ("#152638", "#007F7
 W, H = letter
 M = 0.78 * inch
 CW = W - 2 * M
+FIG = 0.76 * CW   # figures ride a little narrow so the writeup stays inside three pages
 S = {
-    "body": ParagraphStyle("body", fontName="Body", fontSize=9.1, leading=12.6, textColor=NAVY, spaceAfter=6),
-    "small": ParagraphStyle("small", fontName="Body", fontSize=7.6, leading=10.4, textColor=MUTED, spaceAfter=4),
-    "cap": ParagraphStyle("cap", fontName="Italic", fontSize=7.6, leading=10.2, textColor=MUTED, spaceAfter=9),
+    "body": ParagraphStyle("body", fontName="Body", fontSize=9.1, leading=12.6, textColor=NAVY, spaceAfter=5),
+    "small": ParagraphStyle("small", fontName="Body", fontSize=7.4, leading=9.6, textColor=MUTED, spaceAfter=4),
+    "cap": ParagraphStyle("cap", fontName="Italic", fontSize=7.6, leading=10.2, textColor=MUTED, spaceAfter=7),
     "h1": ParagraphStyle("h1", fontName="Bold", fontSize=17, leading=21, textColor=NAVY, spaceAfter=2),
-    "h2": ParagraphStyle("h2", fontName="Bold", fontSize=10.6, leading=14, textColor=TEAL, spaceBefore=8, spaceAfter=3),
+    "h2": ParagraphStyle("h2", fontName="Bold", fontSize=10.6, leading=14, textColor=TEAL, spaceBefore=6, spaceAfter=3),
     "sub": ParagraphStyle("sub", fontName="Body", fontSize=9.6, leading=13, textColor=MUTED, spaceAfter=8),
     "cell": ParagraphStyle("cell", fontName="Body", fontSize=7.9, leading=10.6, textColor=NAVY),
     "cellb": ParagraphStyle("cellb", fontName="Bold", fontSize=7.9, leading=10.6, textColor=NAVY),
@@ -45,7 +46,7 @@ S = {
 P = lambda t, s="body": Paragraph(t, S[s])
 
 
-def figure(path, width=CW, caption=None):
+def figure(path, width=FIG, caption=None):
     w, h = PILImage.open(path).size
     parts = [Image(str(path), width=width, height=width * h / w)]
     if caption:
@@ -79,6 +80,7 @@ def main() -> None:
     noise = json.loads((ROOT / "data/noise_analysis.json").read_text())
     budget = json.loads((ROOT / "data/budget_study.json").read_text())
     clean = json.loads((ROOT / "data/summary.json").read_text())
+    second = json.loads((ROOT / "data/second_method.json").read_text())
     areas, decay, quality = noise["phase_areas"], noise["order_parameter_decay"], noise["vqe_quality"]
     fixed = {k: v["fixed_rule"] for k, v in areas.items()}
     recal = {k: v["recalibrated"] for k, v in areas.items()}
@@ -113,7 +115,7 @@ def main() -> None:
           f"disagreement is not scattered: it is a band just above the analytic lines, where a finite ring still "
           f"holds order that the thermodynamic-limit formulas say has gone."),
 
-        figure(ROOT / "figures/phase_diagrams_noise.png", CW,
+        figure(ROOT / "figures/phase_diagrams_noise.png", FIG,
                "Phase diagrams at p = 0, 0.01, 0.05. Top: classified with a rule calibrated on the clean data. "
                "Bottom: the rule re-fitted on each noisy dataset. White lines are the analytic boundaries."),
 
@@ -138,7 +140,7 @@ def main() -> None:
           f"being compared — so the same per-gate error costs it more. The handout hypothesises this; the numbers "
           f"above measure it."),
 
-        figure(ROOT / "figures/noise_analysis.png", CW,
+        figure(ROOT / "figures/noise_analysis.png", FIG,
                "Left: order parameters versus p. Centre: fractional loss, where the antiphase separates from the "
                "ferromagnet. Right: apparent size of the ordered phases under a fixed versus a recalibrated rule."),
 
@@ -168,32 +170,62 @@ def main() -> None:
           "set by our reconstruction and grid resolution, so the advantage is in the cheap regime rather than "
           "asymptotically. We report this as measured on our own pipeline, not as a general claim."),
 
-        figure(ROOT / "figures/budget_study.png", CW,
+        figure(ROOT / "figures/budget_study.png", FIG,
                "Accuracy versus measurement budget at each noise level; bands are one standard deviation over 40 seeds."),
+
+        P("Result 5 — a second method, and getting the scale back", "h2"),
+        P("Two checks close the loop. The first is an independent method. The fidelity susceptibility, built from the "
+          "overlap of ground states at neighbouring field values, shares no machinery with the correlator clustering: "
+          "no order parameter, no centroids, no labels. Because the ordered phases of a finite ring are "
+          "quasi-degenerate we compare whole ground manifolds rather than single eigenvectors, making the measure "
+          "invariant to the arbitrary basis a degenerate solver returns. Its peak lands on the analytic line within "
+          f"{second['fidelity_susceptibility']['mean_abs_deviation_kappa_below_0.85']:.3f} in h for κ ≤ 0.85, "
+          f"below the grid spacing of {second['fidelity_susceptibility']['grid_spacing_in_h']:.3f} — and it fails "
+          f"where everything else here fails, rising to "
+          f"{second['fidelity_susceptibility']['mean_abs_deviation_kappa_above_0.85']:.2f} in the floating corner. "
+          "Two unrelated methods agreeing on the clean physics and losing the thread in the same place is a stronger "
+          "statement than either alone."),
+        P("The second is error mitigation, which turns Result 2 from a diagnosis into a repair. Holding runs at two "
+          "noise levels, we extrapolate each correlator back to p = 0 and check it against clean data the "
+          "extrapolation never saw. Richardson (linear in p) cuts the mean error on ⟨ZZ⟩<sub>1</sub> from "
+          f"{second['zero_noise_extrapolation']['mean_abs_error_before']['zz1']:.3f} to "
+          f"{second['zero_noise_extrapolation']['mean_abs_error_after']['zz1']['linear']:.4f} and on "
+          f"⟨ZZ⟩<sub>2</sub> from {second['zero_noise_extrapolation']['mean_abs_error_before']['zz2']:.3f} "
+          f"to {second['zero_noise_extrapolation']['mean_abs_error_after']['zz2']['linear']:.4f}; a two-point "
+          "exponential fit, the right shape if depolarizing noise multiplies each correlator by a constant factor, "
+          f"reaches {second['zero_noise_extrapolation']['mean_abs_error_after']['zz1']['exponential']:.4f} and "
+          f"{second['zero_noise_extrapolation']['mean_abs_error_after']['zz2']['exponential']:.4f}. Under the fixed "
+          "p = 0 rule the mitigated data recovers "
+          f"{second['zero_noise_extrapolation']['phase_areas_under_the_clean_rule']['mitigated (exponential)']['ordered_area']:.1%} "
+          "ordered area against "
+          f"{second['zero_noise_extrapolation']['phase_areas_under_the_clean_rule']['noisy p=0.05']['ordered_area']:.1%} "
+          "unmitigated: the 39% that noise erased comes back. The caveat is ours to state — our noise really is a "
+          "depolarizing channel of known strength, the friendliest case extrapolation ever sees. It confirms the "
+          "attenuation picture behind Result 2; it is not a claim about hardware."),
+        figure(ROOT / "figures/second_method.png", 0.68 * CW,
+               "Fidelity susceptibility, computed without any classifier; the boundary located three independent "
+               "ways; extrapolation error against clean data."),
 
         P("The deliverable people can play", "h2"),
         P("The same data drives a browser game: the phase diagram starts hidden, a player spends a budget of "
           "measurements, draws the boundary, and is scored against the stage's own ground truth. Its five stages are "
           "the physics above — 8 spins clean, at p = 0.01 and p = 0.05, 6 spins where the stripes cannot fit, and 12 "
-          "spins where the borders sharpen — and each round crops a different window of the plane so the answer "
-          "cannot be memorised. The in-game opponent plays the bisection strategy measured in Result 4."),
+          "spins where the borders sharpen — and each round crops a different window so the answer cannot be "
+          "memorised. The opponent plays the bisection strategy of Result 4."),
 
         P("Limitations", "h2"),
         P("N = 8 for the noisy scan and 12 for the largest clean stage; finite-size effects are visible as order "
           "surviving above the thermodynamic-limit boundaries, which caps our agreement near 92%. The floating phase "
           "is not resolved and is excluded from scoring. The variational ansatz is imperfect, which is why the "
-          "headline result is stated as a ratio between noise levels rather than as absolute correlator values. One "
-          "noise model, one circuit family, and no error mitigation were tested."),
+          "headline result is a ratio between noise levels rather than absolute correlator values. One noise model "
+          "and one circuit family were tested."),
 
         P("References and reproduction", "h2"),
         P("Quantum Coalition, QSITE 2026 Scientific Track handout and starter kit (Hamiltonian convention, analytic "
           "Ising/BKT/KT lines, noise model, rubric). PennyLane demo <i>Phase transitions of the ANNNI model</i>; "
-          "PennyLane challenge <i>A Noisy Heisenberg Model</i>; PennyLane <font face='Bold'>default.mixed</font> and "
+          "PennyLane challenge <i>A Noisy Heisenberg Model</i>; <font face='Bold'>default.mixed</font> and "
           "<font face='Bold'>DepolarizingChannel</font> documentation. P. Bak and J. von Boehm, Phys. Rev. B 21, 5297 "
-          "(1980). Every figure and number here is produced by a script in the repository: "
-          "<font face='Bold'>scripts/run_pennylane.py --scan</font>, <font face='Bold'>analyse_noise.py</font>, "
-          "<font face='Bold'>budget_study.py</font>, <font face='Bold'>make_stages.py</font>, and the notebook "
-          "<font face='Bold'>phase_hunter.ipynb</font>.", "small"),
+          "(1980). Every number above renders from result JSON written by <font face='Bold'>scripts/</font>.", "small"),
     ]
 
     def on_page(canvas, document):
@@ -206,11 +238,11 @@ def main() -> None:
         canvas.restoreState()
 
     doc = BaseDocTemplate(str(ROOT / "docs/Phase_Hunter_Writeup.pdf"), pagesize=letter,
-                          leftMargin=M, rightMargin=M, topMargin=0.6 * inch, bottomMargin=0.75 * inch,
+                          leftMargin=M, rightMargin=M, topMargin=0.6 * inch, bottomMargin=0.66 * inch,
                           title="Phase Hunter - Q-SITE 2026 Scientific Track writeup",
                           author="Tanish Singh Rajpal")
     doc.addPageTemplates([PageTemplate(id="main",
-                                       frames=[Frame(M, 0.75 * inch, CW, H - 0.6 * inch - 0.75 * inch, id="f",
+                                       frames=[Frame(M, 0.66 * inch, CW, H - 0.6 * inch - 0.66 * inch, id="f",
                                                      leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)],
                                        onPage=on_page)])
     doc.build(story)

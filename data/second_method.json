@@ -1,0 +1,44 @@
+{
+  "fidelity_susceptibility": {
+    "mean_abs_deviation_from_analytic": 0.0631410212398383,
+    "median_abs_deviation_from_analytic": 0.027492915474863017,
+    "mean_abs_deviation_kappa_below_0.85": 0.03541950455845112,
+    "mean_abs_deviation_kappa_above_0.85": 0.2849131546909357,
+    "mean_abs_gap_to_clustering": 0.14814814814814817,
+    "grid_spacing_in_h": 0.05128205128205128
+  },
+  "zero_noise_extrapolation": {
+    "mean_abs_error_before": {
+      "zz1": 0.12021411742521576,
+      "zz2": 0.17889511366672822
+    },
+    "mean_abs_error_after": {
+      "zz1": {
+        "linear": 0.006462487436022318,
+        "exponential": 0.0019153713281544913
+      },
+      "zz2": {
+        "linear": 0.013694829028396952,
+        "exponential": 0.002006660717840997
+      }
+    },
+    "phase_areas_under_the_clean_rule": {
+      "clean": {
+        "ordered_area": 0.3263888888888889,
+        "agreement": 0.9223826714801444
+      },
+      "noisy p=0.05": {
+        "ordered_area": 0.1996527777777778,
+        "agreement": 0.8953068592057761
+      },
+      "mitigated (linear)": {
+        "ordered_area": 0.3263888888888889,
+        "agreement": 0.9223826714801444
+      },
+      "mitigated (exponential)": {
+        "ordered_area": 0.3263888888888889,
+        "agreement": 0.9223826714801444
+      }
+    }
+  }
+}

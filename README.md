@@ -9,8 +9,10 @@ game scores your map against ground truth. Five stages change the physics undern
 gate noise. Every round crops a different window of the plane, so the answer cannot be memorised.
 
 The game is the presentation layer. Underneath it is the required science: phase diagrams at
-p = 0, 0.01 and 0.05, an analysis of what noise does to them, and a measurement-budget study of our
-own. Every number below was produced by a script in this repository.
+p = 0, 0.01 and 0.05, an analysis of what noise does to them, a measurement-budget study of our own,
+an independent second method that finds the same boundary without any classifier, and zero-noise
+extrapolation that puts back what the noise took. Every number below was produced by a script in this
+repository.
 
 ### Deliverables
 
@@ -25,7 +27,8 @@ own. Every number below was produced by a script in this repository.
 **Headline result.** Read with a decision rule calibrated on clean data, the ordered phases lose
 **39% of their area** by p = 0.05. Re-fit that rule on the noisy data and they do not move at
 all. Depolarizing noise destroys the *scale* of an order parameter, not the *location* of the
-transition — what it really costs you is shots.
+transition — what it really costs you is shots. Extrapolating the two noise levels back to p = 0
+recovers that area to within 0.002 per correlator.
 
 ---
 
@@ -110,6 +113,39 @@ reconstruction and the grid, so the advantage is in the cheap regime rather than
 
 ---
 
+### A second method, and getting the scale back
+
+![second method](figures/second_method.png)
+
+Two checks close the loop.
+
+**An independent method.** The fidelity susceptibility — how fast the ground state itself changes as
+the field is turned up — shares nothing with the correlator clustering: no order parameter, no
+centroids, no labels. On a finite ring the ordered phases are quasi-degenerate, so a single eigenvector
+is meaningless (a solver returns an arbitrary basis of the degenerate manifold); comparing whole ground
+manifolds instead makes the measure basis-invariant. Its peak sits on the analytic transition to within
+**0.035 in h** for κ ≤ 0.85, below the grid spacing of
+0.051 — and it fails exactly where everything else here fails, rising to
+0.28 in the floating corner.
+
+**Error mitigation.** Holding runs at two noise levels, each correlator can be extrapolated back to
+p = 0 and checked against clean data the extrapolation never saw.
+
+| Mean \|error\| vs clean data | ⟨ZZ⟩₁ | ⟨ZZ⟩₂ |
+|---|---|---|
+| Unmitigated, p = 0.05 | 0.120 | 0.179 |
+| Richardson (linear in p) | 0.0065 | 0.0137 |
+| Two-point exponential fit | **0.0019** | **0.0020** |
+
+Read with the fixed p = 0 rule, the mitigated data recovers
+32.6% ordered area
+against 20.0% unmitigated: the
+39% that noise erased comes back. The caveat is ours to state — our noise really is a depolarizing
+channel of known strength, the friendliest case extrapolation ever sees. It confirms that the
+attenuation picture above is right; it is not a claim about hardware.
+
+---
+
 ## The game people can play
 
 ![a round of Phase Hunter](figures/gameplay.gif)
@@ -171,7 +207,7 @@ never out of date with the code.
 | Presentation video | Not recorded. |
 | Floating phase detection | Not attempted. The handout calls it very hard at small N; those cells are excluded from scoring and we say so rather than claiming otherwise. |
 | N ≥ 12 under noise | Clean only. The noisy scan is N = 8; N = 12 exact is a game stage. |
-| Error mitigation | Not tested. With runs at two noise levels an extrapolation back to p = 0 would be the obvious next step. |
+| Trotterised dynamics | Not attempted. Everything here is ground-state physics. |
 
 ### Two honesty notes
 
@@ -202,6 +238,9 @@ python3 scripts/analyse_noise.py --qubits 8
 
 # how many measurements a boundary costs (~8 s)
 python3 scripts/budget_study.py
+
+# independent second method + zero-noise extrapolation (~19 s)
+python3 scripts/second_method.py
 
 # rebuild the five game stages, then play
 python3 scripts/make_stages.py
@@ -235,6 +274,7 @@ scripts/make_gifs.py       records figures/gameplay.gif and figures/memes.gif fr
 scripts/make_stages.py     builds the five game stages (8/6/12 spins, three noise levels)
 scripts/analyse_noise.py   phase diagrams under noise + the noise analysis
 scripts/budget_study.py    how many measurements a boundary costs, by strategy
+scripts/second_method.py   fidelity susceptibility + zero-noise extrapolation
 scripts/make_writeup.py    renders docs/Phase_Hunter_Writeup.pdf from the result JSON
 phase_hunter.ipynb         the submission notebook: every result, executed
 game/index.html            playable prototype (no build step)
