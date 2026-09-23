@@ -40,6 +40,18 @@ def exact_ground_state(n_qubits: int, kappa: float, h: float):
     return np.asarray(vectors[:, 0]), float(values[0])
 
 
+def correlators_from_state(state, n_qubits: int):
+    """Exact <ZZ> at distance 1 and 2 for a state vector (used as the p=0 check)."""
+    probabilities = np.abs(np.asarray(state)) ** 2
+    probabilities = probabilities / probabilities.sum()
+    index = np.arange(len(probabilities))
+    bits = ((index[:, None] >> np.arange(n_qubits)[None, :]) & 1)
+    z = 1 - 2 * bits
+    nn = np.mean(z * np.roll(z, -1, axis=1), axis=1)
+    nnn = np.mean(z * np.roll(z, -2, axis=1), axis=1)
+    return float(probabilities @ nn), float(probabilities @ nnn)
+
+
 def correlator_observables(n_qubits: int):
     nn = [qml.Z(i) @ qml.Z((i + 1) % n_qubits) for i in range(n_qubits)]
     nnn = [qml.Z(i) @ qml.Z((i + 2) % n_qubits) for i in range(n_qubits)]
@@ -61,9 +73,13 @@ def ansatz(params, n_qubits: int, layers: int, noise: float = 0.0):
                 qml.DepolarizingChannel(noise, wires=target)
 
 
-def vqe_ground_state(n_qubits: int, kappa: float, h: float, layers: int = 3,
-                     steps: int = 120, seed: int = 0, stepsize: float = 0.05):
-    """Optimise the ansatz on the noiseless device; returns the fitted parameters."""
+def vqe_ground_state(n_qubits: int, kappa: float, h: float, layers: int = 4,
+                     steps: int = 150, seed: int = 0, stepsize: float = 0.05, init=None):
+    """Optimise the ansatz on the noiseless device; returns the fitted parameters.
+
+    `init` warm-starts from a neighbouring grid point, which both speeds up the
+    fit and keeps it out of the poor local minima a cold start can fall into.
+    """
     device = qml.device("default.qubit", wires=n_qubits)
     hamiltonian = build_hamiltonian(n_qubits, kappa, h)
 
@@ -72,8 +88,12 @@ def vqe_ground_state(n_qubits: int, kappa: float, h: float, layers: int = 3,
         ansatz(params, n_qubits, layers)
         return qml.expval(hamiltonian)
 
-    rng = np.random.default_rng(seed)
-    params = pnp.array(rng.normal(0.0, 0.1, size=(layers, n_qubits, 2)), requires_grad=True)
+    if init is None:
+        rng = np.random.default_rng(seed)
+        start = rng.normal(0.0, 0.1, size=(layers, n_qubits, 2))
+    else:
+        start = np.array(init, dtype=float)
+    params = pnp.array(start, requires_grad=True)
     optimizer = qml.AdamOptimizer(stepsize=stepsize)
     for _ in range(steps):
         params = optimizer.step(cost, params)
