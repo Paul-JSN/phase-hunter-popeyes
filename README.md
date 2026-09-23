@@ -44,7 +44,10 @@ report it rather than tuning the classifier to match the lines.
 
 ### Playable prototype
 
-![game prototype](figures/game_prototype.png)
+![a round of Phase Hunter](figures/gameplay.gif)
+
+*A real round, recorded from the prototype: cheap pings, two sharp ones, dragging a boundary, then the
+reveal.*
 
 Open `game/index.html` in a browser — no server, no build step. Click the map to ping, drag the orange
 handles to draw your boundaries, press **Reveal & score**. Ping readings are drawn from the exact
@@ -57,6 +60,8 @@ asks whether the state still looks ordered, and halves the interval. In two test
 the human-versus-agent measurement-budget experiment is still to come.
 
 ### Reactions (the meme layer)
+
+![the reaction cards in motion](figures/memes.gif)
 
 ![the thirteen reaction cards](figures/meme_wall.png)
 
@@ -73,7 +78,10 @@ All thirteen cards fire on real game state, so the joke doubles as feedback abou
 **Everything is original art.** The mascot, the props and the captions are ours, drawn as inline SVG
 in `game/memes.js`. We ship no copyrighted meme images, no photographs, and no real person's likeness
 — which matters for a public repo. Cards appear one at a time, are dismissible, auto-hide after four
-seconds, honour `prefers-reduced-motion`, and can be switched off with the **Memes** toggle.
+seconds, honour `prefers-reduced-motion`, and can be switched off with the **Memes** toggle. The art
+animates with CSS rather than shipping video: sonar rings pulse, fog drifts, the balloon bobs, the
+stamp lands. `scripts/make_gifs.py` records the GIFs above straight from the running game, so they are
+never out of date with the code.
 
 ---
 
@@ -129,6 +137,7 @@ src/pennylane_pipeline.py  PennyLane Hamiltonian, VQE ansatz, noisy correlators 
 scripts/make_dataset.py    grid scan -> data/ + game/dataset.js
 scripts/make_figures.py    figures/
 scripts/run_pennylane.py   cross-check and noise pilot
+scripts/make_gifs.py       records figures/gameplay.gif and figures/memes.gif from the live game
 game/index.html            playable prototype (no build step)
 game/memes.js              original mascot art and the thirteen reaction cards
 docs/Phase_Hunter_Plan.pdf full project plan: game design, levels, experiment, schedule

@@ -41,7 +41,29 @@
   .rc .txt b{display:block;font-size:14px;line-height:1.3}
   .rc .txt span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
   @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
-  @media (prefers-reduced-motion:reduce){.rc{animation:none}}
+  /* scene animation - CSS only, so the art stays vector-sharp and weighs nothing */
+  .ph-ring{transform-origin:60px 58px;animation:ping 2.2s ease-out infinite}
+  .ph-r2{animation-delay:.35s} .ph-r3{animation-delay:.7s}
+  @keyframes ping{0%{transform:scale(.45);opacity:.9}70%{opacity:.15}100%{transform:scale(1.15);opacity:0}}
+  .ph-wobble{animation:wobble 1.5s ease-in-out infinite}
+  @keyframes wobble{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .ph-drift{animation:drift 7s ease-in-out infinite}
+  .ph-slow{animation-duration:11s;animation-direction:reverse}
+  @keyframes drift{0%,100%{transform:translateX(-12px)}50%{transform:translateX(12px)}}
+  .ph-bob{animation:bob 2.6s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(4px)}50%{transform:translateY(-6px)}}
+  .ph-shine{animation:shine 2s ease-in-out infinite}
+  @keyframes shine{0%,100%{opacity:1;transform:translateY(0)}50%{opacity:.6;transform:translateY(-3px)}}
+  .ph-rise{animation:rise 2.4s ease-in-out infinite}
+  @keyframes rise{0%,100%{transform:translateY(3px)}50%{transform:translateY(-4px)}}
+  .ph-spin{transform-origin:center;animation:turn 3.4s linear infinite}
+  @keyframes turn{to{transform:rotate(360deg)}}
+  .ph-stamp{transform-origin:center;transform-box:fill-box;animation:stamp 2.8s ease-out infinite}
+  @keyframes stamp{0%{transform:scale(1.6);opacity:0}14%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:1}}
+  @media (prefers-reduced-motion:reduce){
+    .rc{animation:none}
+    .ph-ring,.ph-wobble,.ph-drift,.ph-bob,.ph-shine,.ph-rise,.ph-spin,.ph-stamp{animation:none}
+  }
   #endcard{display:none;margin-top:12px}
   #endcard .panel{display:flex;gap:12px;align-items:center;background:#0F1D30;border:1px solid #2c4661;
                   border-radius:12px;padding:12px}

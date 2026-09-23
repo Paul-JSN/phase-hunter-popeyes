@@ -53,14 +53,14 @@ const SCENES = {
     <text x="14" y="26" fill="${P.grey}" font-size="13" font-family="system-ui">truth 0.48</text>
     <text x="14" y="96" fill="${P.orange}" font-size="15" font-weight="700" font-family="system-ui">read 0.71</text>
     <path d="M12 60 H138" stroke="${P.grey}" stroke-width="2" stroke-dasharray="4 5"/>
-    <path d="M30 60 q20 -26 40 -4 q18 20 40 -16" stroke="${P.orange}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path class="ph-wobble" d="M30 60 q20 -26 40 -4 q18 20 40 -16" stroke="${P.orange}" stroke-width="3" fill="none" stroke-linecap="round"/>
     ${spin("shock",112,34,0.72)}`),
 
   /* sonar rings going out from the mascot */
   sonar: svg(150,110,`
-    <circle cx="60" cy="58" r="20" fill="none" stroke="${P.blue}" stroke-width="2" opacity=".65"/>
-    <circle cx="60" cy="58" r="33" fill="none" stroke="${P.blue}" stroke-width="2" opacity=".4"/>
-    <circle cx="60" cy="58" r="46" fill="none" stroke="${P.blue}" stroke-width="2" opacity=".2"/>
+    <circle class="ph-ring ph-r1" cx="60" cy="58" r="20" fill="none" stroke="${P.blue}" stroke-width="2" opacity=".65"/>
+    <circle class="ph-ring ph-r2" cx="60" cy="58" r="33" fill="none" stroke="${P.blue}" stroke-width="2" opacity=".4"/>
+    <circle class="ph-ring ph-r3" cx="60" cy="58" r="46" fill="none" stroke="${P.blue}" stroke-width="2" opacity=".2"/>
     ${spin("neutral",60,58,0.85)}`),
 
   /* sunglasses drop: mascot above a beaten robot rival */
@@ -99,18 +99,18 @@ const SCENES = {
     <path d="M10 34 H140" stroke="${P.orange}" stroke-width="2.5" stroke-dasharray="5 5"/>
     <text x="12" y="96" fill="${P.purple}" font-size="10" font-family="system-ui">antiphase</text>
     <text x="12" y="26" fill="${P.orange}" font-size="10" font-family="system-ui">paramagnet</text>
-    <path d="M75 46 v12" stroke="${P.light}" stroke-width="1.5"/>
+    <g class="ph-bob"><path d="M75 46 v12" stroke="${P.light}" stroke-width="1.5"/>
     <ellipse cx="75" cy="40" rx="9" ry="11" fill="${P.blue}" opacity=".8"/>
-    ${spin("shock",75,66,0.6)}`),
+    ${spin("shock",75,66,0.6)}</g>`),
 
   /* fog rolling in */
   fog: svg(150,110,`
     ${spin("sweat",44,66,0.8)}
-    <g fill="${P.grey}" opacity=".35">
+    <g class="ph-drift" fill="${P.grey}" opacity=".35">
       <ellipse cx="104" cy="44" rx="34" ry="14"/><ellipse cx="122" cy="62" rx="28" ry="12"/>
       <ellipse cx="96" cy="78" rx="32" ry="13"/>
     </g>
-    <g fill="${P.grey}" opacity=".2"><ellipse cx="70" cy="90" rx="46" ry="12"/></g>`),
+    <g class="ph-drift ph-slow" fill="${P.grey}" opacity=".2"><ellipse cx="70" cy="90" rx="46" ry="12"/></g>`),
 
   /* two-panel: cheap vs sharp ping */
   twopanel: svg(150,110,`
@@ -132,15 +132,15 @@ const SCENES = {
 
   /* escalating glow: the budget ladder */
   ladder: svg(150,110,`
-    ${[0,1,2,3].map(i=>`<g transform="translate(${22+i*36} ${86-i*18})">
-        ${spin(["flat","neutral","smug","cool"][i],0,0,0.42,0,i)}</g>`).join("")}
-    <text x="10" y="18" fill="${P.grey}" font-size="10" font-family="system-ui">20 → 100 → 500 → ask the agent</text>`),
+    ${[0,1,2,3].map(i=>`<g class="ph-rise" style="animation-delay:${i*0.25}s"><g transform="translate(${22+i*36} ${86-i*18})">
+        ${spin(["flat","neutral","smug","cool"][i],0,0,0.42,0,i)}</g></g>`).join("")}
+    <text x="10" y="18" fill="${P.grey}" font-size="10" font-family="system-ui">20 → 100 → 500 shots</text>`),
 
   /* repeat ping */
   repeat: svg(150,110,`
     ${spin("flat",52,58,0.85)}
     <g transform="translate(112 58)">
-      <circle r="17" fill="none" stroke="${P.grey}" stroke-width="2.5" stroke-dasharray="4 4"/>
+      <circle class="ph-spin" r="17" fill="none" stroke="${P.grey}" stroke-width="2.5" stroke-dasharray="4 4"/>
       <path d="M0 -17 l6 -6 l-6 -6" stroke="${P.grey}" stroke-width="2.5" fill="none"
             stroke-linecap="round" stroke-linejoin="round"/>
       <circle r="4" fill="${P.grey}"/>
@@ -149,13 +149,13 @@ const SCENES = {
   /* certified: a stamp */
   certified: svg(150,110,`
     ${spin("cool",50,58,0.95)}
-    <g transform="translate(110 54) rotate(-14)">
+    <g class="ph-stamp-wrap" transform="translate(110 54) rotate(-14)"><g class="ph-stamp">
       <rect x="-32" y="-18" width="64" height="36" rx="6" fill="none" stroke="${P.skin}" stroke-width="3"/>
       <text x="0" y="-2" fill="${P.skin}" font-size="11" font-weight="700" text-anchor="middle"
             font-family="system-ui">PHASE</text>
       <text x="0" y="12" fill="${P.skin}" font-size="11" font-weight="700" text-anchor="middle"
             font-family="system-ui">HUNTER</text>
-    </g>`),
+    </g></g>`),
 
   /* the rival wins: robot holding the trophy */
   rival: svg(150,110,`
@@ -166,11 +166,11 @@ const SCENES = {
       <path d="M-7 7 q7 4 14 -1" stroke="${P.skin}" stroke-width="2" fill="none" stroke-linecap="round"/>
       <path d="M0 -16 v-7" stroke="${P.grey}" stroke-width="2"/><circle cx="0" cy="-25" r="2.6" fill="${P.grey}"/>
     </g>
-    <g transform="translate(104 20)">
+    <g class="ph-shine"><g transform="translate(104 20)">
       <path d="M-9 -8 h18 v6 a9 9 0 0 1 -18 0 z" fill="${P.orange}"/>
       <path d="M-9 -6 h-5 a5 5 0 0 0 5 5 M9 -6 h5 a5 5 0 0 1 -5 5" stroke="${P.orange}" stroke-width="2" fill="none"/>
       <rect x="-3" y="4" width="6" height="5" fill="${P.orange}"/><rect x="-7" y="9" width="14" height="3" rx="1" fill="${P.orange}"/>
-    </g>`),
+    </g></g>`),
 
   /* mid score: a shrug with a wonky boundary */
   wonky: svg(150,110,`
