@@ -1,20 +1,31 @@
 # Phase Hunter
 
-**Q-SITE 2026 Open Challenge — Scientific Track (Quantum Coalition): mapping the ANNNI phase diagram under noise.**
+**Q-SITE 2026 Open Challenge — Scientific Track (Quantum Coalition): mapping the ANNNI phase diagram
+under noise.**
 
-Phase Hunter turns the challenge into a game. The (κ, h) phase diagram starts hidden under fog. You
-spend a budget of *pings* — simulated measurements, with real shot noise — then draw where you think
-the phase boundaries are, and the game scores your map against the analytic reference boundaries. An
-AI agent plays the same map with the same budget. Each level raises the gate noise, so the phases
-blur and shift while you hunt.
+The (κ, h) phase diagram starts hidden under fog. You spend a budget of measurements, read the
+correlators they return — with real shot noise — then draw where you think the boundary runs, and the
+game scores your map against ground truth. Five stages change the physics underneath: ring length and
+gate noise. Every round crops a different window of the plane, so the answer cannot be memorised.
 
 The game is the presentation layer. Underneath it is the required science: phase diagrams at
-p = 0, 0.01 and 0.05, and an analysis of how noise moves the boundaries.
+p = 0, 0.01 and 0.05, an analysis of what noise does to them, and a measurement-budget study of our
+own. Every number below was produced by a script in this repository.
 
-> **Status: draft submission (Sept 23, 2026).** The clean phase diagram and the playable prototype are
-> done and reproducible from this repo. The noisy phase diagrams are not done yet — see
-> [What is not done](#what-is-not-done-yet). Nothing in this README is a claimed result unless a
-> script in this repo produced it.
+### Deliverables
+
+| Required | Where | State |
+|---|---|---|
+| Implementation notebook | [`phase_hunter.ipynb`](phase_hunter.ipynb) | Done, executed, outputs stored |
+| Phase diagram, p = 0 | [`figures/clean_phase_diagram.png`](figures/clean_phase_diagram.png) | Done |
+| Phase diagrams, p = 0.01 and p = 0.05 | [`figures/phase_diagrams_noise.png`](figures/phase_diagrams_noise.png) | Done |
+| Writeup, 2–3 pages | [`docs/Phase_Hunter_Writeup.pdf`](docs/Phase_Hunter_Writeup.pdf) | Done |
+| Presentation video | — | Not recorded yet |
+
+**Headline result.** Read with a decision rule calibrated on clean data, the ordered phases lose
+**39% of their area** by p = 0.05. Re-fit that rule on the noisy data and they do not move at
+all. Depolarizing noise destroys the *scale* of an order parameter, not the *location* of the
+transition — what it really costs you is shots.
 
 ---
 
@@ -41,47 +52,6 @@ rounding of a transition, and the handout warns the reference lines are qualitat
 report it rather than tuning the classifier to match the lines.
 
 ![correlators](figures/clean_correlators.png)
-
-### Playable prototype
-
-![a round of Phase Hunter](figures/gameplay.gif)
-
-*A real round, recorded from the prototype: cheap pings, two sharp ones, dragging a boundary, then the
-reveal.*
-
-Open `game/index.html` in a browser — no server, no build step. Click the map to ping, drag the orange
-handles to draw your boundaries, press **Reveal & score**. Ping readings are drawn from the exact
-ground-state statistics with Gaussian shot noise of size σ/√shots, so a 20-shot ping really can
-mislead you and a 500-shot ping really is sharper.
-
-**Run agent** plays a bisection baseline: for each of eight κ columns it pings at the midpoint in h,
-asks whether the state still looks ordered, and halves the interval. In two test runs it used 24 pings and scored
-**90.3 %** and **93.6 %** (the spread is shot noise). Those are two runs of a baseline, not a study —
-the human-versus-agent measurement-budget experiment is still to come.
-
-### Reactions (the meme layer)
-
-![the reaction cards in motion](figures/memes.gif)
-
-![the thirteen reaction cards](figures/meme_wall.png)
-
-Spinny, our spin-arrow mascot, reacts to what just happened, and each card is a drawn scene rather
-than a caption on its own. A ping landing more than two standard deviations from the truth gets
-*"Trust me bro"* over a wobbling measurement, with the reading and the true value printed underneath.
-Five cheap pings in a row gets a two-panel *"20 shots is a personality"*. A ping inside the floating
-band gets Spinny drifting on a balloon between the two boundary lines. Beating the agent gets the
-sunglasses; losing to it gets the robot holding the trophy. Revealing your map also prints a result
-panel worth screenshotting.
-
-All thirteen cards fire on real game state, so the joke doubles as feedback about the run.
-
-**Everything is original art.** The mascot, the props and the captions are ours, drawn as inline SVG
-in `game/memes.js`. We ship no copyrighted meme images, no photographs, and no real person's likeness
-— which matters for a public repo. Cards appear one at a time, are dismissible, auto-hide after four
-seconds, honour `prefers-reduced-motion`, and can be switched off with the **Memes** toggle. The art
-animates with CSS rather than shipping video: sonar rings pulse, fog drifts, the balloon bobs, the
-stamp lands. `scripts/make_gifs.py` records the GIFs above straight from the running game, so they are
-never out of date with the code.
 
 ### Noisy phase diagrams (p = 0, 0.01, 0.05), N = 8
 
@@ -126,30 +96,6 @@ work should pick N = 8 or 12, never 6 or 10.
 
 ---
 
-## What is not done yet
-
-| Item | Status |
-|---|---|
-| Noisy phase diagrams at p = 0.01 and p = 0.05 | **Done** (above), N = 8, 24 x 24, 58 minutes of simulation. |
-| PennyLane path executed | **Done.** The Hamiltonian was cross-checked against the numpy reference, and the scan ran in the track environment. |
-| Measurement-budget study | **Done** — `scripts/budget_study.py`, figure below. Random sampling needs 36 pings to label 90% of the clean map correctly; adaptive sampling needs 24. |
-| Floating-phase detection | Not attempted. The handout calls it very hard at small N. |
-| Writeup (2–3 pages) | **Done** — `docs/Phase_Hunter_Writeup.pdf`, generated from the result JSON by `scripts/make_writeup.py` so it cannot drift from the runs. |
-| Notebook | **Done** — `phase_hunter.ipynb`, every cell executed with outputs stored. |
-| Presentation video | Not recorded yet. |
-
-### Two honesty notes
-
-1. **The game now runs on the real noisy data.** Its three levels are the p = 0, 0.01 and 0.05 grids
-   from the PennyLane scan, with shot noise drawn from the exact per-shot standard deviations. The
-   placeholder model in `src/noise_preview.py` is kept only as a fallback and is labelled `preview_*`
-   wherever it appears.
-2. **The current figures come from the numpy path**, `src/annni.py`. It builds and diagonalises the
-   same dense Hamiltonian the starter kit's own `exact_diag.py` builds with numpy and
-   `numpy.linalg.eigh`. `src/pennylane_pipeline.py` constructs the same Hamiltonian with
-   `qml.dot`, and `scripts/run_pennylane.py --check` compares the two matrices element by element.
-   The final submitted diagrams will come from the PennyLane path.
-
 ### How many measurements does a boundary cost?
 
 ![budget study](figures/budget_study.png)
@@ -163,6 +109,81 @@ structured strategy to clear 90%. By 36–50 pings all four converge near 92–9
 reconstruction and the grid, so the advantage is in the cheap regime rather than asymptotically.
 
 ---
+
+## The game people can play
+
+![a round of Phase Hunter](figures/gameplay.gif)
+
+Open `game/index.html` — no server, no build step. Click the fog to measure, choose how many shots to
+spend (weak scans are cheap and lie; deep scans cost four times as much), then drag the five orange
+handles to call the border and press **Reveal & score**.
+
+**Five stages, and they are different physics rather than reskins:**
+
+| Stage | Ring | Noise | What it shows |
+|---|---|---|---|
+| Clear skies | 8 spins | p = 0 | The four phases, sharp |
+| Static | 8 spins | p = 0.01 | Correlators fade; borders hold |
+| Whiteout | 8 spins | p = 0.05 | Ordered signal is half gone |
+| Broken ring | 6 spins | p = 0 | The period-4 stripes cannot fit a ring of six, so that phase never forms (43.9% agreement with the analytic lines) |
+| Long chain | 12 spins | p = 0 | Borders sharpen to 95.1% |
+
+Each round crops a random window of the (κ, h) plane, and windows that sit almost entirely inside one
+phase are resampled — a window with no border in it would score 100% or 0% for no skill. **Practice
+mode** labels every measurement ORDER, CHAOS or EDGE?, rings in red any measurement your line
+contradicts, and offers a rough starting shape; a four-step tutorial walks the first round. **Hunter
+mode** removes all of it. Two instruction pages sit behind the header icons: the rules, and what the
+physics actually is.
+
+**Send the AI** plays the bisection strategy measured in the budget study below, on the same map, with
+the same budget. Beating it is the second way to win.
+
+### Reactions (the meme layer)
+
+![the reaction cards in motion](figures/memes.gif)
+
+![the thirteen reaction cards](figures/meme_wall.png)
+
+Spinny, our spin-arrow mascot, reacts to what just happened, and each card is a drawn scene rather
+than a caption on its own. A ping landing more than two standard deviations from the truth gets
+*"Trust me bro"* over a wobbling measurement, with the reading and the true value printed underneath.
+Five cheap pings in a row gets a two-panel *"20 shots is a personality"*. A ping inside the floating
+band gets Spinny drifting on a balloon between the two boundary lines. Beating the agent gets the
+sunglasses; losing to it gets the robot holding the trophy. Revealing your map also prints a result
+panel worth screenshotting.
+
+All thirteen cards fire on real game state, so the joke doubles as feedback about the run.
+
+**Everything is original art.** The mascot, the props and the captions are ours, drawn as inline SVG
+in `game/memes.js`. We ship no copyrighted meme images, no photographs, and no real person's likeness
+— which matters for a public repo. Cards appear one at a time, are dismissible, auto-hide after four
+seconds, honour `prefers-reduced-motion`, and can be switched off with the **Memes** toggle. The art
+animates with CSS rather than shipping video: sonar rings pulse, fog drifts, the balloon bobs, the
+stamp lands. `scripts/make_gifs.py` records the GIFs above straight from the running game, so they are
+never out of date with the code.
+
+---
+
+## What is not done yet
+
+| Item | Status |
+|---|---|
+| Presentation video | Not recorded. |
+| Floating phase detection | Not attempted. The handout calls it very hard at small N; those cells are excluded from scoring and we say so rather than claiming otherwise. |
+| N ≥ 12 under noise | Clean only. The noisy scan is N = 8; N = 12 exact is a game stage. |
+| Error mitigation | Not tested. With runs at two noise levels an extrapolation back to p = 0 would be the obvious next step. |
+
+### Two honesty notes
+
+1. **The game runs on the real data.** Its stages are the p = 0, 0.01 and 0.05 grids from the
+   PennyLane scan plus exact ground states at N = 6 and N = 12, with shot noise drawn from the exact
+   per-shot standard deviations. The placeholder model in `src/noise_preview.py` survives only as an
+   unused fallback and is labelled `preview_*` wherever it could appear.
+2. **The current figures come from the numpy path**, `src/annni.py`. It builds and diagonalises the
+   same dense Hamiltonian the starter kit's own `exact_diag.py` builds with numpy and
+   `numpy.linalg.eigh`. `src/pennylane_pipeline.py` constructs the same Hamiltonian with
+   `qml.dot`, and `scripts/run_pennylane.py --check` compares the two matrices element by element.
+   The final submitted diagrams will come from the PennyLane path.
 
 ## How to run
 
