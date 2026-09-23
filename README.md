@@ -56,6 +56,21 @@ asks whether the state still looks ordered, and halves the interval. In two test
 **90.3 %** and **93.6 %** (the spread is shot noise). Those are two runs of a baseline, not a study —
 the human-versus-agent measurement-budget experiment is still to come.
 
+### Reactions (the meme layer)
+
+![reaction card](figures/reaction_card.png)
+
+Spinny, our spin-arrow mascot, reacts to what just happened. A ping that lands more than two standard
+deviations from the truth gets *"Trust me bro"* with the reading and the true value underneath; five
+cheap pings in a row gets *"20 shots is a personality"*; beating the agent gets *"I would like to
+speak to my developer"*. Thirteen cards are wired to specific game events, so a card also tells the
+player something true about the run.
+
+Everything is original: the mascot is drawn as inline SVG in `game/index.html`, and the captions are
+ours. We ship no copyrighted meme images or photographs, and no real person's likeness. Cards appear
+one at a time, are dismissible, auto-hide after four seconds, honour `prefers-reduced-motion`, and can
+be switched off with the **Memes** toggle.
+
 ---
 
 ## What is not done yet

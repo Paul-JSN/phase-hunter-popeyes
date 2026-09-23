@@ -31,6 +31,16 @@
   .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
   .note{font-size:11.5px;color:var(--muted);line-height:1.45}
   .big{font-size:26px;font-weight:700}
+  /* meme reaction cards */
+  #cards{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:10px;z-index:40;align-items:flex-end}
+  .rc{display:flex;gap:11px;align-items:center;background:#16283f;border:1px solid #2c4661;border-left:4px solid var(--orange);
+      border-radius:12px;padding:10px 13px;max-width:335px;box-shadow:0 12px 28px rgba(0,0,0,.45);cursor:pointer;
+      animation:pop .22s ease-out; transition:opacity .25s, transform .25s}
+  .rc.out{opacity:0;transform:translateX(18px)}
+  .rc .txt b{display:block;font-size:14px;line-height:1.3}
+  .rc .txt span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+  @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.rc{animation:none}}
 </style>
 </head>
 <body>
@@ -38,6 +48,7 @@
   <h1>Phase Hunter</h1>
   <span class="tag">prototype &middot; Q-SITE 2026 open challenge (scientific)</span>
 </header>
+<div id="cards" aria-live="polite"></div>
 <main>
   <canvas id="board" width="560" height="560"></canvas>
   <aside>
@@ -63,6 +74,15 @@
         <button id="reset">Reset</button>
       </div>
       <div id="score"></div>
+    </div>
+    <div class="card">
+      <h2>Reactions</h2>
+      <div class="row">
+        <button id="memes" class="active">Memes: on</button>
+        <button id="testMeme">Preview a card</button>
+      </div>
+      <div class="note">Original mascot and original captions - we use no copyrighted meme images.
+        Each card fires on something that just happened in the physics.</div>
     </div>
     <div class="card">
       <h2>Legend</h2>
@@ -105,7 +125,8 @@ function buildUI(){
   data.levels.forEach((lv,i)=>{
     const b=document.createElement("button");
     b.textContent = lv.name==="clean" ? "L1 clean (p=0)" : `p = ${lv.p}`;
-    b.onclick=()=>{level=i; reset(); syncButtons();};
+    b.onclick=()=>{const rose = data.levels[i].p > data.levels[level].p; level=i; reset(); syncButtons();
+                   if(rose) react("noise_up", `noise level p = ${data.levels[i].p}`);};
     box.appendChild(b);
   });
   const sbox=document.getElementById("shots");
@@ -134,7 +155,19 @@ function ping(k,h,cost=true){
   const r={k:data.kappas[b], h:data.hs[a],
            zz1: lv.zz1[a][b] + data.sd1[a][b]/Math.sqrt(shots)*gauss(),
            zz2: lv.zz2[a][b] + data.sd2[a][b]/Math.sqrt(shots)*gauss(), shots};
-  if(cost){ energy-=COST[shots]; pings.push(r); }
+  if(cost){
+    energy-=COST[shots]; pings.push(r);
+    const sigma = data.sd1[a][b]/Math.sqrt(shots);
+    const repeat = pings.slice(0,-1).some(q=>q.k===r.k && q.h===r.h);
+    if(pings.length===1) react("first_ping", `${shots} shots at κ=${r.k.toFixed(2)}, h=${r.h.toFixed(2)}`);
+    else if(Math.abs(r.zz1 - lv.zz1[a][b]) > 2*sigma)
+      react("noisy_ping", `read ${r.zz1.toFixed(2)} · truth ${lv.zz1[a][b].toFixed(2)} · ${shots} shots`);
+    else if(repeat) react("repeat_ping");
+    else if(data.reference[a][b]===PHASE.FLOAT) react("floating_hit", "that ping landed in the floating band");
+    else if(shots===500) react("big_spend", "4 energy for one sharp reading");
+    else if(shots===20 && ++cheapPings===5) react("cheap_habit", "five cheap pings and counting");
+    if(energy < COST[20]) react("broke", `${pings.length} pings spent`);
+  }
   document.getElementById("energy").textContent=energy;
   document.getElementById("pings").textContent=pings.length;
   return r;
@@ -223,15 +256,72 @@ document.getElementById("reveal").onclick=()=>{
   document.getElementById("score").innerHTML=
     `<div class="big">${(s*100).toFixed(1)}%</div><div class="note">cells labelled correctly (floating band excluded),
      using ${pings.length} pings and ${60-energy} energy.</div>`;
+  if(agentScore!==null && s>agentScore) react("beat_agent", `you ${(s*100).toFixed(1)}% · agent ${(agentScore*100).toFixed(1)}%`);
+  else if(agentScore!==null && s<agentScore) react("lost_agent", `you ${(s*100).toFixed(1)}% · agent ${(agentScore*100).toFixed(1)}%`);
+  else if(s>=0.95) react("reveal_high", `${pings.length} pings`);
+  else if(s>=0.80) react("reveal_mid", `${(s*100).toFixed(1)}% with ${pings.length} pings`);
+  else react("reveal_low", `${(s*100).toFixed(1)}% with ${pings.length} pings`);
 };
 document.getElementById("reset").onclick=reset;
 function reset(){
-  energy=60; pings=[]; revealed=false;
+  energy=60; pings=[]; revealed=false; cheapPings=0;
   document.getElementById("score").innerHTML="";
   document.getElementById("energy").textContent=energy;
   document.getElementById("pings").textContent=0;
   draw();
 }
+
+/* ------------------------------------------------------------------
+   Spinny: our own mascot. A spin arrow with a face, drawn as inline SVG
+   so nothing copyrighted ships with the game.
+------------------------------------------------------------------ */
+function spinny(mood){
+  const face = {
+    neutral: '<circle cx="21" cy="20" r="2" fill="#0B1424"/><circle cx="31" cy="20" r="2" fill="#0B1424"/><path d="M20 28 q6 4 12 0" stroke="#0B1424" stroke-width="2" fill="none" stroke-linecap="round"/>',
+    cool:    '<rect x="14" y="16" width="24" height="8" rx="2" fill="#0B1424"/><path d="M20 29 q6 5 12 0" stroke="#0B1424" stroke-width="2" fill="none" stroke-linecap="round"/>',
+    shock:   '<circle cx="21" cy="19" r="3" fill="#0B1424"/><circle cx="31" cy="19" r="3" fill="#0B1424"/><ellipse cx="26" cy="29" rx="4" ry="5" fill="#0B1424"/>',
+    sweat:   '<circle cx="21" cy="20" r="2" fill="#0B1424"/><circle cx="31" cy="20" r="2" fill="#0B1424"/><path d="M20 30 q6 -4 12 0" stroke="#0B1424" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M38 14 q3 5 0 7 q-3 -2 0 -7" fill="#5C9BD1"/>',
+    flat:    '<circle cx="21" cy="20" r="2" fill="#0B1424"/><circle cx="31" cy="20" r="2" fill="#0B1424"/><path d="M20 29 h12" stroke="#0B1424" stroke-width="2" stroke-linecap="round"/>'
+  }[mood] || '';
+  return `<svg width="46" height="46" viewBox="0 0 52 52" aria-hidden="true">
+    <circle cx="26" cy="26" r="21" fill="#2FB3A3"/>
+    <path d="M26 6 v11 M21 11 l5 -5 l5 5" stroke="#E8F0F4" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    ${face}</svg>`;
+}
+
+/* Reaction cards. Every entry is written for a specific game event, so the
+   joke lands on a moment the player just lived through. */
+const CARDS = {
+  first_ping:   {mood:"neutral", text:"Sonar deployed."},
+  noisy_ping:   {mood:"shock",   text:"Trust me bro."},
+  cheap_habit:  {mood:"flat",    text:"20 shots is a personality."},
+  big_spend:    {mood:"cool",    text:"Deluxe measurement acquired."},
+  repeat_ping:  {mood:"flat",    text:"Measuring it twice won't move the boundary."},
+  floating_hit: {mood:"shock",   text:"Wait, it was floating the whole time?"},
+  broke:        {mood:"sweat",   text:"Budget: 0. Vibes: immaculate."},
+  noise_up:     {mood:"sweat",   text:"The fog is coming."},
+  reveal_high:  {mood:"cool",    text:"Certified phase hunter."},
+  reveal_mid:   {mood:"neutral", text:"Task failed successfully."},
+  reveal_low:   {mood:"sweat",   text:"Bro took the scenic route."},
+  beat_agent:   {mood:"cool",    text:"I would like to speak to my developer."},
+  lost_agent:   {mood:"flat",    text:"The agent sends its regards."}
+};
+let memesOn = true, lastCard = 0, cheapPings = 0, agentScore = null;
+function react(id, detail){
+  if(!memesOn || !CARDS[id]) return;
+  const now = Date.now();
+  if(now - lastCard < 1200) return;          // at most one card at a time
+  lastCard = now;
+  const card = document.createElement("div");
+  card.className = "rc";
+  card.innerHTML = spinny(CARDS[id].mood) +
+    `<div class="txt"><b>${CARDS[id].text}</b>${detail?`<span>${detail}</span>`:""}</div>`;
+  const kill = () => { card.classList.add("out"); setTimeout(()=>card.remove(), 260); };
+  card.onclick = kill;
+  document.getElementById("cards").appendChild(card);
+  setTimeout(kill, 4200);
+}
+
 // Baseline "agent": bisects in h along a few kappa columns to find where order disappears.
 document.getElementById("agent").onclick=()=>{
   reset(); shots=100; syncButtons();
@@ -250,8 +340,18 @@ document.getElementById("agent").onclick=()=>{
   handlesA=handlesA.map(p=>({k:p.k,h:interp(found,p.k)}));
   handlesB=handlesB.map(p=>({k:p.k,h:interp(found,p.k)}));
   draw();
+  agentScore = score();
   document.getElementById("score").innerHTML=
-    `<div class="note">Agent placed ${pings.length} pings by bisection. Press reveal to score it.</div>`;
+    `<div class="note">Agent placed ${pings.length} pings by bisection and scored
+     ${(agentScore*100).toFixed(1)}%. Reset, beat that, then reveal.</div>`;
+};
+document.getElementById("memes").onclick=e=>{
+  memesOn=!memesOn; e.target.textContent = memesOn ? "Memes: on" : "Memes: off";
+  e.target.classList.toggle("active", memesOn);
+};
+document.getElementById("testMeme").onclick=()=>{
+  const keys=Object.keys(CARDS); lastCard=0;
+  react(keys[Math.floor(Math.random()*keys.length)], "preview");
 };
 function interp(found,k){
   const keys=Object.keys(found).map(Number).sort((a,b)=>a-b);
