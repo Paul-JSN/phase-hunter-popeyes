@@ -1,12 +1,12 @@
 {
   "qubits": 8,
   "grid": [
-    40,
-    40
+    24,
+    24
   ],
-  "ground_states": 1600,
-  "seconds": 11.54,
-  "accuracy_excluding_floating": 0.9228,
-  "accuracy_all_cells": 0.8894,
-  "floating_cell_fraction": 0.0362
+  "ground_states": 576,
+  "seconds": 3.36,
+  "accuracy_excluding_floating": 0.9188,
+  "accuracy_all_cells": 0.8837,
+  "floating_cell_fraction": 0.0382
 }

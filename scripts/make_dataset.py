@@ -28,6 +28,8 @@ def main() -> None:
     parser.add_argument("--qubits", type=int, default=8)
     parser.add_argument("--grid", type=int, default=40)
     parser.add_argument("--preview-noise", type=float, nargs="*", default=[0.01, 0.05])
+    parser.add_argument("--scan", type=str, default=None,
+                        help="a PennyLane scan .npz; its real noise levels replace the placeholder")
     arguments = parser.parse_args()
 
     kappas = np.linspace(0.0, 1.0, arguments.grid)
@@ -47,16 +49,30 @@ def main() -> None:
     np.savez_compressed(ROOT / f"data/grid_N{arguments.qubits}.npz", kappas=kappas, hs=hs,
                         reference=reference, predicted=predicted, **grid)
 
-    levels = [{"name": "clean", "p": 0.0, "zz1": grid["zz1"], "zz2": grid["zz2"], "placeholder": False}]
-    for p in arguments.preview_noise:
-        zz1, zz2, q = apply_noise_preview(grid["zz1"], grid["zz2"], p)
-        levels.append({"name": f"preview_p{p}", "p": p, "zz1": zz1, "zz2": zz2,
-                       "placeholder": True, "effective_q": q})
+    if arguments.scan:
+        # real noisy simulation: rebuild the grid on the scan's own axes
+        scan = np.load(ROOT / arguments.scan)
+        kappas, hs = scan["kappas"], scan["hs"]
+        grid = chain.grid(kappas, hs)                       # exact values, for the shot-noise widths
+        kappa_grid, h_grid = np.meshgrid(kappas, hs)
+        reference = reference_labels(kappa_grid, h_grid)
+        predicted = classify(grid["zz1"], grid["zz2"], kappas, hs)
+        scores = accuracy(predicted, reference)
+        levels = [{"name": "clean" if p == 0 else f"p{p}", "p": float(p),
+                   "zz1": scan[f"p{p}_zz1"], "zz2": scan[f"p{p}_zz2"], "placeholder": False}
+                  for p in [float(x) for x in scan["noise"]]]
+    else:
+        levels = [{"name": "clean", "p": 0.0, "zz1": grid["zz1"], "zz2": grid["zz2"], "placeholder": False}]
+        for p in arguments.preview_noise:
+            zz1, zz2, q = apply_noise_preview(grid["zz1"], grid["zz2"], p)
+            levels.append({"name": f"preview_p{p}", "p": p, "zz1": zz1, "zz2": zz2,
+                           "placeholder": True, "effective_q": q})
 
     dataset = {
-        "note": ("Level 'clean' is exact diagonalisation at p = 0. Levels named preview_* use the "
-                 "PLACEHOLDER global depolarizing model in src/noise_preview.py, not the challenge's "
-                 "per-CNOT model, and must not be reported as noise results."),
+        "note": ("Levels come from the PennyLane scan: a VQE state-preparation circuit with a "
+                 "depolarizing channel after every CNOT, simulated on default.mixed. Shot-noise "
+                 "widths are the exact per-shot standard deviations. Any level named preview_* is a "
+                 "placeholder model instead and must not be reported as a noise result."),
         "qubits": arguments.qubits,
         "kappas": kappas.tolist(),
         "hs": hs.tolist(),

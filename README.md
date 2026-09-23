@@ -83,25 +83,65 @@ animates with CSS rather than shipping video: sonar rings pulse, fog drifts, the
 stamp lands. `scripts/make_gifs.py` records the GIFs above straight from the running game, so they are
 never out of date with the code.
 
+### Noisy phase diagrams (p = 0, 0.01, 0.05), N = 8
+
+![phase diagrams under noise](figures/phase_diagrams_noise.png)
+
+576 points on a 24 x 24 grid. At each one a hardware-efficient ansatz is fitted to the ground state on
+`default.qubit`, then the same circuit is run on `default.mixed` with a depolarizing channel after
+every CNOT. Fits are checked against exact diagonalisation and refitted when they land too high:
+mean energy error 0.149 (1.5% of |E|), max
+0.323, and the prepared state reproduces the exact correlators to
+0.027 (distance 1) and 0.042 (distance 2).
+
+**The headline result is the top row against the bottom row.** Both show the same noisy data. The top
+uses a decision rule calibrated on the clean simulation; the bottom re-fits the rule on the noisy data
+itself.
+
+| | p = 0 | p = 0.01 | p = 0.05 |
+|---|---|---|---|
+| Ordered area, rule calibrated at p = 0 | 32.6% | 32.5% | **20.0%** |
+| Ordered area, rule recalibrated | 32.6% | 32.6% | **33.2%** |
+| Agreement with the analytic boundaries (recalibrated) | 92.2% | 92.2% | 91.7% |
+
+Read with a fixed rule, the ordered phases lose 39% of
+their area by p = 0.05. Recalibrated, they do not move at all. Depolarizing noise attenuates the
+correlators almost multiplicatively, so it destroys the *scale* of the order parameter but not the
+*location* of the transition. What noise really costs you is signal-to-noise, and therefore shots.
+
+![noise analysis](figures/noise_analysis.png)
+
+**Which phase is most fragile.** Deep inside each region, the fractional loss of the order parameter
+at p = 0.05 is 47% for the antiphase against
+40% for the ferromagnet. The antiphase is carried by the
+next-nearest-neighbour correlator, a longer-range object than the ferromagnet's nearest-neighbour one,
+so the same per-gate error costs it more. The paramagnet, which has little order to lose, drops
+35%.
+
+**System size must be a multiple of four.** The antiphase is a period-4 pattern, so on a ring it only
+fits when N is divisible by 4. At N = 6 the ground state deep in the antiphase gives
+<Z_i Z_i+2> = -0.33 instead of -0.99, and phase classification collapses to 43.5% agreement against
+92.8% at N = 8. Our first noisy scan ran at N = 6 and had to be thrown away. Anyone extending this
+work should pick N = 8 or 12, never 6 or 10.
+
 ---
 
 ## What is not done yet
 
 | Item | Status |
 |---|---|
-| Noisy phase diagrams at p = 0.01 and p = 0.05 | **Not done.** Code is written (`src/pennylane_pipeline.py`), not yet run. |
-| PennyLane path executed | **Not done.** PyPI was unreachable from the machine that produced these figures, so PennyLane could not be installed there. The code is written and must be run with `scripts/run_pennylane.py --check` in the track environment before the final submission. |
+| Noisy phase diagrams at p = 0.01 and p = 0.05 | **Done** (above), N = 8, 24 x 24, 58 minutes of simulation. |
+| PennyLane path executed | **Done.** The Hamiltonian was cross-checked against the numpy reference, and the scan ran in the track environment. |
 | Measurement-budget study (human / grid / random / agent) | Not started. |
 | Floating-phase detection | Not attempted. The handout calls it very hard at small N. |
 | Writeup (2–3 pages) and presentation video | Not started. |
 
 ### Two honesty notes
 
-1. **The noise levels in the game prototype are a placeholder.** `src/noise_preview.py` applies a
-   single global depolarizing channel to the exact ground state, which simply scales the correlators.
-   That is **not** the challenge's model (depolarizing noise on the target qubit after every CNOT,
-   simulated on `default.mixed`). Levels built from it are labelled `preview_*` in the dataset and in
-   the game UI, and no number from that model will be reported as a noise result.
+1. **The game now runs on the real noisy data.** Its three levels are the p = 0, 0.01 and 0.05 grids
+   from the PennyLane scan, with shot noise drawn from the exact per-shot standard deviations. The
+   placeholder model in `src/noise_preview.py` is kept only as a fallback and is labelled `preview_*`
+   wherever it appears.
 2. **The current figures come from the numpy path**, `src/annni.py`. It builds and diagonalises the
    same dense Hamiltonian the starter kit's own `exact_diag.py` builds with numpy and
    `numpy.linalg.eigh`. `src/pennylane_pipeline.py` constructs the same Hamiltonian with

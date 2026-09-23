@@ -2,7 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 .ipynb_checkpoints/
-data/*.npz
+data/pennylane_scan_N6.npz
 .DS_Store
 # raw footage and scratch: only the finished card clips are committed
 game/clips/*.mp4

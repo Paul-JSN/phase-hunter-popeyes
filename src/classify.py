@@ -26,9 +26,9 @@ def _features(zz1: np.ndarray, zz2: np.ndarray) -> np.ndarray:
     return np.stack([zz1.ravel(), zz2.ravel()], axis=1)
 
 
-def classify(zz1: np.ndarray, zz2: np.ndarray, kappas: np.ndarray, hs: np.ndarray,
-             iterations: int = 50) -> np.ndarray:
-    """Return a label array shaped like `zz1` (indexed [h_index, kappa_index])."""
+def fit_centroids(zz1: np.ndarray, zz2: np.ndarray, kappas: np.ndarray, hs: np.ndarray,
+                  iterations: int = 50) -> np.ndarray:
+    """Cluster centres in (correlator) space, in the fixed order ferro, antiphase, para."""
     points = _features(zz1, zz2)
     order = [FERRO, ANTIPHASE, PARA]
     centroids = []
@@ -49,10 +49,28 @@ def classify(zz1: np.ndarray, zz2: np.ndarray, kappas: np.ndarray, hs: np.ndarra
             break
         centroids = moved
 
+    return centroids
+
+
+ORDER = [FERRO, ANTIPHASE, PARA]
+
+
+def assign(zz1: np.ndarray, zz2: np.ndarray, centroids: np.ndarray) -> np.ndarray:
+    """Label every cell by its nearest centroid, without re-fitting.
+
+    Passing centroids fitted on the noiseless data is what a practitioner does
+    when they calibrate a classifier on clean simulations and then apply it to
+    noisy hardware, so it is the version that shows boundaries moving.
+    """
+    points = _features(zz1, zz2)
     distances = np.linalg.norm(points[:, None, :] - centroids[None, :, :], axis=2)
-    assignment = np.argmin(distances, axis=1)
-    labels = np.array(order)[assignment]
-    return labels.reshape(zz1.shape)
+    return np.array(ORDER)[np.argmin(distances, axis=1)].reshape(zz1.shape)
+
+
+def classify(zz1: np.ndarray, zz2: np.ndarray, kappas: np.ndarray, hs: np.ndarray,
+             iterations: int = 50) -> np.ndarray:
+    """Cluster and label in one step, re-fitting the centres on this data."""
+    return assign(zz1, zz2, fit_centroids(zz1, zz2, kappas, hs, iterations))
 
 
 def accuracy(predicted: np.ndarray, reference: np.ndarray) -> dict[str, float]:
