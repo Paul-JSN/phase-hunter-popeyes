@@ -1,0 +1,8 @@
+# numpy reference path (what produced the current figures)
+numpy>=1.26
+matplotlib>=3.8
+
+# PennyLane path (src/pennylane_pipeline.py, scripts/run_pennylane.py).
+# The Scientific Track environment pins this version:
+#   uv sync --project "Scientific Track"
+pennylane==0.44.1

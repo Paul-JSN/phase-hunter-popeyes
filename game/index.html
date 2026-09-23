@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase Hunter</title>
+<style>
+  :root{
+    --bg:#0B1424; --panel:#132339; --ink:#E8F0F4; --muted:#93A9BD; --line:#243a52;
+    --teal:#2FB3A3; --orange:#E08B45; --purple:#9B7BD4; --blue:#5C9BD1; --edge:#24384f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{padding:14px 18px;border-bottom:1px solid var(--edge);display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+  h1{font-size:17px;margin:0;letter-spacing:.02em}
+  .tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em}
+  main{display:flex;gap:18px;padding:18px;flex-wrap:wrap;align-items:flex-start}
+  #board{background:#08101d;border:1px solid var(--edge);border-radius:10px;touch-action:none;cursor:crosshair}
+  aside{width:290px;min-width:250px;flex:1}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  button{border:0;border-radius:7px;color:var(--ink);padding:7px 11px;font:inherit;cursor:pointer;background:#1d3350}
+  button:hover{background:#274364}
+  button.active{background:var(--teal);color:#06231f;font-weight:600}
+  button.primary{background:var(--orange);color:#2b1704;font-weight:600}
+  .stat{display:flex;justify-content:space-between;border-bottom:1px solid var(--edge);padding:4px 0}
+  .stat:last-child{border:0}
+  .stat b{font-variant-numeric:tabular-nums}
+  .legend span{display:inline-flex;align-items:center;gap:6px;margin-right:10px;font-size:12px;color:var(--muted)}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .note{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .big{font-size:26px;font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <h1>Phase Hunter</h1>
+  <span class="tag">prototype &middot; Q-SITE 2026 open challenge (scientific)</span>
+</header>
+<main>
+  <canvas id="board" width="560" height="560"></canvas>
+  <aside>
+    <div class="card">
+      <h2>Level</h2>
+      <div class="row" id="levels"></div>
+      <div class="note" id="levelNote"></div>
+    </div>
+    <div class="card">
+      <h2>Ping</h2>
+      <div class="row" id="shots"></div>
+      <div class="stat"><span>Energy left</span><b id="energy">60</b></div>
+      <div class="stat"><span>Pings used</span><b id="pings">0</b></div>
+      <div class="note">Click the map to measure there. Cheap pings are noisy: the reading is the true
+        correlator plus shot noise of size sd/&radic;shots.</div>
+    </div>
+    <div class="card">
+      <h2>Your map</h2>
+      <div class="note">Drag the orange handles so the curves separate the phases, then reveal.</div>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" id="reveal">Reveal &amp; score</button>
+        <button id="agent">Run agent</button>
+        <button id="reset">Reset</button>
+      </div>
+      <div id="score"></div>
+    </div>
+    <div class="card">
+      <h2>Legend</h2>
+      <div class="legend">
+        <span><i class="dot" style="background:#2FB3A3"></i>ferromagnetic</span>
+        <span><i class="dot" style="background:#9B7BD4"></i>antiphase</span>
+        <span><i class="dot" style="background:#E08B45"></i>paramagnetic</span>
+        <span><i class="dot" style="background:#5C9BD1"></i>floating</span>
+      </div>
+      <div class="note" style="margin-top:8px">A ping shows two rings: the outer ring is the
+        nearest-neighbour correlator, the inner disc the next-nearest one. Scoring ignores the thin
+        floating band, which this prototype does not ask you to draw.</div>
+    </div>
+  </aside>
+</main>
+<script src="dataset.js"></script>
+<script>
+const PHASE = {FERRO:0, PARA:1, ANTI:2, FLOAT:3};
+const COLORS = ["#2FB3A3","#E08B45","#9B7BD4","#5C9BD1"];
+const canvas = document.getElementById("board"), ctx = canvas.getContext("2d");
+const PAD = {l:46, r:14, t:14, b:34};
+let data=null, level=0, shots=100, energy=60, pings=[], revealed=false, drag=null;
+const COST = {20:1, 100:2, 500:4};
+// two polylines the player drags: A spans kappa 0..0.5 (ferro edge), B spans 0.5..1 (antiphase edge)
+let handlesA=[{k:0.0,h:1.3},{k:0.17,h:1.2},{k:0.34,h:1.1},{k:0.5,h:1.0}];
+let handlesB=[{k:0.5,h:1.0},{k:0.67,h:1.1},{k:0.84,h:1.2},{k:1.0,h:1.3}];
+
+const px = k => PAD.l + k*(canvas.width-PAD.l-PAD.r);
+const py = h => canvas.height-PAD.b - (h/2)*(canvas.height-PAD.t-PAD.b);
+const toK = x => (x-PAD.l)/(canvas.width-PAD.l-PAD.r);
+const toH = y => 2*(canvas.height-PAD.b-y)/(canvas.height-PAD.t-PAD.b);
+
+function boot(d){ data=d; buildUI(); draw(); }
+if (window.PHASE_HUNTER_DATA) boot(window.PHASE_HUNTER_DATA);
+else fetch("dataset.json").then(r=>r.json()).then(boot)
+  .catch(()=>{document.getElementById("levelNote").textContent="dataset.js not found - run scripts/make_dataset.py first.";});
+
+function buildUI(){
+  const box = document.getElementById("levels");
+  data.levels.forEach((lv,i)=>{
+    const b=document.createElement("button");
+    b.textContent = lv.name==="clean" ? "L1 clean (p=0)" : `p = ${lv.p}`;
+    b.onclick=()=>{level=i; reset(); syncButtons();};
+    box.appendChild(b);
+  });
+  const sbox=document.getElementById("shots");
+  [20,100,500].forEach(s=>{
+    const b=document.createElement("button");
+    b.textContent=`${s} shots (${COST[s]})`;
+    b.onclick=()=>{shots=s; syncButtons();};
+    sbox.appendChild(b);
+  });
+  syncButtons();
+}
+function syncButtons(){
+  [...document.getElementById("levels").children].forEach((b,i)=>b.classList.toggle("active",i===level));
+  [...document.getElementById("shots").children].forEach(b=>b.classList.toggle("active",b.textContent.startsWith(String(shots))));
+  const lv=data.levels[level];
+  document.getElementById("levelNote").innerHTML = lv.placeholder
+    ? `p = ${lv.p}: <b>placeholder noise model</b> (global depolarizing stand-in, not the challenge's per-CNOT model).`
+    : "Exact diagonalisation of the ANNNI ring, N = " + data.qubits + ", no noise.";
+}
+function nearestIndex(arr,v){let best=0,bd=1e9;arr.forEach((a,i)=>{const d=Math.abs(a-v);if(d<bd){bd=d;best=i;}});return best;}
+function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+function ping(k,h,cost=true){
+  if(cost && energy < COST[shots]) return null;
+  const a=nearestIndex(data.hs,h), b=nearestIndex(data.kappas,k), lv=data.levels[level];
+  const r={k:data.kappas[b], h:data.hs[a],
+           zz1: lv.zz1[a][b] + data.sd1[a][b]/Math.sqrt(shots)*gauss(),
+           zz2: lv.zz2[a][b] + data.sd2[a][b]/Math.sqrt(shots)*gauss(), shots};
+  if(cost){ energy-=COST[shots]; pings.push(r); }
+  document.getElementById("energy").textContent=energy;
+  document.getElementById("pings").textContent=pings.length;
+  return r;
+}
+function curveAt(handles,k){
+  for(let i=0;i<handles.length-1;i++){
+    const p=handles[i], q=handles[i+1];
+    if(k>=p.k && k<=q.k){ const t=(k-p.k)/(q.k-p.k || 1); return p.h+t*(q.h-p.h); }
+  }
+  return handles[handles.length-1].h;
+}
+function playerLabel(k,h){
+  if(k<0.5) return h < curveAt(handlesA,k) ? PHASE.FERRO : PHASE.PARA;
+  return h < curveAt(handlesB,k) ? PHASE.ANTI : PHASE.PARA;
+}
+function score(){
+  let hit=0,total=0;
+  data.hs.forEach((h,a)=>data.kappas.forEach((k,b)=>{
+    const ref=data.reference[a][b];
+    if(ref===PHASE.FLOAT) return;
+    total++; if(playerLabel(k,h)===ref) hit++;
+  }));
+  return hit/total;
+}
+function draw(){
+  if(!data) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const W=canvas.width-PAD.l-PAD.r, H=canvas.height-PAD.t-PAD.b;
+  const cw=W/data.kappas.length, ch=H/data.hs.length;
+  // background: fog, or the truth once revealed
+  data.hs.forEach((h,a)=>data.kappas.forEach((k,b)=>{
+    const x=px(k)-cw/2, y=py(h)-ch/2;
+    if(revealed){ ctx.fillStyle=COLORS[data.reference[a][b]]; ctx.globalAlpha=.85; }
+    else { const n=0.5+0.5*Math.sin(a*12.9898+b*78.233); ctx.fillStyle=`rgb(${10+8*n},${20+10*n},${34+14*n})`; ctx.globalAlpha=1; }
+    ctx.fillRect(x,y,cw+1,ch+1);
+  }));
+  ctx.globalAlpha=1;
+  // pings
+  pings.forEach(p=>{
+    const x=px(p.k), y=py(p.h);
+    ctx.beginPath(); ctx.arc(x,y,13,0,7); ctx.fillStyle="rgba(255,255,255,.07)"; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,8,0,7); ctx.fillStyle=viridis(clamp01(p.zz1)); ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,.75)"; ctx.lineWidth=1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,3.4,0,7); ctx.fillStyle=diverging(clamp01(0.5+0.5*p.zz2)); ctx.fill();
+  });
+  // player's curves
+  [[handlesA,"#E08B45"],[handlesB,"#E08B45"]].forEach(([hs,color])=>{
+    ctx.beginPath(); hs.forEach((p,i)=> i?ctx.lineTo(px(p.k),py(p.h)):ctx.moveTo(px(p.k),py(p.h)));
+    ctx.strokeStyle=color; ctx.lineWidth=2.2; ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
+    hs.forEach(p=>{ ctx.beginPath(); ctx.arc(px(p.k),py(p.h),5.5,0,7); ctx.fillStyle=color; ctx.fill();
+                    ctx.strokeStyle="#0B1424"; ctx.lineWidth=1.5; ctx.stroke(); });
+  });
+  axes();
+}
+function clamp01(v){return Math.max(0,Math.min(1,v));}
+function viridis(t){const c=[[68,1,84],[59,82,139],[33,145,140],[94,201,98],[253,231,37]];const i=Math.min(3,Math.floor(t*4));const f=t*4-i;const a=c[i],b=c[i+1];return `rgb(${a.map((v,j)=>Math.round(v+f*(b[j]-v))).join(",")})`;}
+function diverging(t){const c=[[103,0,31],[214,96,77],[247,247,247],[67,147,195],[5,48,97]];const i=Math.min(3,Math.floor(t*4));const f=t*4-i;const a=c[i],b=c[i+1];return `rgb(${a.map((v,j)=>Math.round(v+f*(b[j]-v))).join(",")})`;}
+function axes(){
+  ctx.strokeStyle="#24384f"; ctx.lineWidth=1; ctx.fillStyle="#93A9BD"; ctx.font="11px system-ui";
+  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,canvas.height-PAD.b); ctx.lineTo(canvas.width-PAD.r,canvas.height-PAD.b); ctx.stroke();
+  [0,0.25,0.5,0.75,1].forEach(k=>{ctx.fillText(k.toFixed(2),px(k)-11,canvas.height-PAD.b+16);});
+  [0,0.5,1,1.5,2].forEach(h=>{ctx.fillText(h.toFixed(1),8,py(h)+4);});
+  ctx.fillText("κ  (frustration)",canvas.width/2-34,canvas.height-6);
+  ctx.save(); ctx.translate(14,canvas.height/2+22); ctx.rotate(-Math.PI/2); ctx.fillText("h  (field)",0,0); ctx.restore();
+}
+canvas.addEventListener("pointerdown",e=>{
+  if(!data) return;
+  const rect=canvas.getBoundingClientRect();
+  const x=(e.clientX-rect.left)*canvas.width/rect.width, y=(e.clientY-rect.top)*canvas.height/rect.height;
+  for(const hs of [handlesA,handlesB])
+    for(const p of hs)
+      if(Math.hypot(px(p.k)-x,py(p.h)-y)<11){ drag=p; return; }
+  const k=toK(x), h=toH(y);
+  if(k>=0&&k<=1&&h>=0&&h<=2){ ping(k,h); draw(); }
+});
+canvas.addEventListener("pointermove",e=>{
+  if(!drag) return;
+  const rect=canvas.getBoundingClientRect();
+  const y=(e.clientY-rect.top)*canvas.height/rect.height;
+  drag.h=Math.max(0,Math.min(2,toH(y))); draw();
+});
+window.addEventListener("pointerup",()=>{drag=null;});
+document.getElementById("reveal").onclick=()=>{
+  revealed=true; draw();
+  const s=score();
+  document.getElementById("score").innerHTML=
+    `<div class="big">${(s*100).toFixed(1)}%</div><div class="note">cells labelled correctly (floating band excluded),
+     using ${pings.length} pings and ${60-energy} energy.</div>`;
+};
+document.getElementById("reset").onclick=reset;
+function reset(){
+  energy=60; pings=[]; revealed=false;
+  document.getElementById("score").innerHTML="";
+  document.getElementById("energy").textContent=energy;
+  document.getElementById("pings").textContent=0;
+  draw();
+}
+// Baseline "agent": bisects in h along a few kappa columns to find where order disappears.
+document.getElementById("agent").onclick=()=>{
+  reset(); shots=100; syncButtons();
+  const columns=[0.05,0.2,0.35,0.45,0.6,0.75,0.9,1.0];
+  const found={};
+  columns.forEach(k=>{
+    let lo=0, hi=2;
+    for(let step=0; step<3 && energy>=COST[shots]; step++){
+      const mid=(lo+hi)/2, r=ping(k,mid);
+      if(!r) break;
+      const ordered = k<0.5 ? r.zz1>0.5 : r.zz2<-0.5;
+      if(ordered) lo=mid; else hi=mid;
+    }
+    found[k]=(lo+hi)/2;
+  });
+  handlesA=handlesA.map(p=>({k:p.k,h:interp(found,p.k)}));
+  handlesB=handlesB.map(p=>({k:p.k,h:interp(found,p.k)}));
+  draw();
+  document.getElementById("score").innerHTML=
+    `<div class="note">Agent placed ${pings.length} pings by bisection. Press reveal to score it.</div>`;
+};
+function interp(found,k){
+  const keys=Object.keys(found).map(Number).sort((a,b)=>a-b);
+  if(k<=keys[0]) return found[keys[0]];
+  if(k>=keys[keys.length-1]) return found[keys[keys.length-1]];
+  for(let i=0;i<keys.length-1;i++) if(k>=keys[i]&&k<=keys[i+1]){
+    const t=(k-keys[i])/(keys[i+1]-keys[i]); return found[keys[i]]+t*(found[keys[i+1]]-found[keys[i]]);
+  }
+  return 1;
+}
+</script>
+</body>
+</html>
