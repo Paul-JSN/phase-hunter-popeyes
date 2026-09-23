@@ -1,11 +1,13 @@
 {
   "fidelity_susceptibility": {
-    "mean_abs_deviation_from_analytic": 0.0631410212398383,
-    "median_abs_deviation_from_analytic": 0.027492915474863017,
-    "mean_abs_deviation_kappa_below_0.85": 0.03541950455845112,
-    "mean_abs_deviation_kappa_above_0.85": 0.2849131546909357,
-    "mean_abs_gap_to_clustering": 0.14814814814814817,
-    "grid_spacing_in_h": 0.05128205128205128
+    "mean_abs_deviation_from_analytic": 0.045589152445551125,
+    "median_abs_deviation_from_analytic": 0.02804242769054726,
+    "mean_abs_deviation_kappa_below_0.85": 0.046820809455626125,
+    "mean_abs_deviation_kappa_above_0.85": 0.035735896364951086,
+    "mean_abs_gap_to_clustering": 0.1282051282051282,
+    "grid_spacing_in_h": 0.05128205128205128,
+    "method": "unique ground state in translation-invariant, spin-flip-even sector; h=0 excluded",
+    "h_zero_excluded": true
   },
   "zero_noise_extrapolation": {
     "mean_abs_error_before": {
@@ -19,7 +21,7 @@
       },
       "zz2": {
         "linear": 0.013694829028396952,
-        "exponential": 0.002006660717840997
+        "exponential": 0.0020066607178409975
       }
     },
     "phase_areas_under_the_clean_rule": {

@@ -1,0 +1,59 @@
+{
+  "qubits": 12,
+  "points": 18,
+  "h_spacing": 0.15000000000000002,
+  "preparation_energy_error": {
+    "mean": 0.18550959461360764,
+    "max": 0.47355036903313596
+  },
+  "cuts": {
+    "ferromagnet to paramagnet": {
+      "kappa": 0.2,
+      "order_parameter": "zz1",
+      "analytic_boundary": 0.6533598938636982,
+      "crossing_clean": 0.8449543583282638,
+      "noise": {
+        "p0.01": {
+          "attenuation_factor": 0.9042489147612575,
+          "mean_residual_after_rescaling": 0.0034944789540284843,
+          "crossing_fixed_threshold": 0.8256629565344875,
+          "crossing_rescaled_threshold": 0.8482651447043379,
+          "shift_fixed": -0.019291401793776308,
+          "shift_rescaled": 0.0033107863760740708
+        },
+        "p0.05": {
+          "attenuation_factor": 0.614932640374513,
+          "mean_residual_after_rescaling": 0.007969859639706664,
+          "crossing_fixed_threshold": 0.7140656792089276,
+          "crossing_rescaled_threshold": 0.8815441042632124,
+          "shift_fixed": -0.13088867911933622,
+          "shift_rescaled": 0.03658974593494857
+        }
+      }
+    },
+    "antiphase to paramagnet": {
+      "kappa": 0.8,
+      "order_parameter": "zz2",
+      "analytic_boundary": 0.4811704479703633,
+      "crossing_clean": 0.7369568562901079,
+      "noise": {
+        "p0.01": {
+          "attenuation_factor": 0.8548963798423054,
+          "mean_residual_after_rescaling": 0.012828636786983419,
+          "crossing_fixed_threshold": 0.6996353664257846,
+          "crossing_rescaled_threshold": 0.7475482995582509,
+          "shift_fixed": -0.037321489864323265,
+          "shift_rescaled": 0.010591443268142986
+        },
+        "p0.05": {
+          "attenuation_factor": 0.5119411307492748,
+          "mean_residual_after_rescaling": 0.02763016251918865,
+          "crossing_fixed_threshold": 0.3543339271898459,
+          "crossing_rescaled_threshold": 0.7729157259502224,
+          "shift_fixed": -0.38262292910026197,
+          "shift_rescaled": 0.03595886966011452
+        }
+      }
+    }
+  }
+}

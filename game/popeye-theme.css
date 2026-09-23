@@ -1,0 +1,115 @@
+/* Team Popeyes: vintage nautical packaging around the unchanged scientific map. */
+:root{
+  --bg:#102b3b;--panel:#153447;--panel2:#1c4052;--edge:#365665;
+  --ink:#fff5db;--muted:#b9cbd0;--teal:#9ec972;--gold:#efd08a;
+  --paper:#f3ead3;--navy:#123044;--sail-red:#a83e35;--spinach:#385d3d;
+}
+body{
+  background-color:var(--paper);
+  background-image:linear-gradient(rgba(34,62,66,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(34,62,66,.045) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+.wrap{max-width:1240px;padding:24px 24px 40px}
+header{color:var(--navy);border-bottom:3px solid var(--navy);padding-bottom:18px;margin-bottom:20px;gap:16px}
+.logo{gap:12px;flex-shrink:0}
+.logo h1{font-size:26px;letter-spacing:-1px;line-height:1.1}
+.logo small{color:#526365;font-size:10px;letter-spacing:.16em;margin-top:5px}
+.crew-mark{width:50px;height:50px;background:var(--sail-red);color:var(--paper);border:2px solid var(--navy);border-radius:50%;padding:9px;box-shadow:3px 3px 0 var(--navy)}
+.hud{gap:7px}
+.pill{background:#fffaeb;border:1px solid #c6c0ac;padding:7px 11px;border-radius:7px;color:var(--navy)}
+.bar{background:#dfddcb;width:72px}
+.bar i{background:var(--spinach)}
+#roundTag{flex-basis:100%;order:1;background:transparent;border:0;padding:1px 0!important;justify-content:flex-end;color:#526365!important;font-size:10px!important}
+.icon-btn{border-radius:7px;background:var(--navy);border-color:var(--navy);color:var(--paper);width:36px;height:36px}
+.voyage-banner{display:grid;grid-template-columns:minmax(0,1fr) 250px;align-items:center;gap:28px;position:relative;padding:26px 36px;background:var(--navy);border:2px solid var(--navy);border-radius:12px;overflow:hidden;margin-bottom:24px;box-shadow:0 5px 0 #d1c5a7}
+.voyage-banner:after{content:"";position:absolute;bottom:0;left:0;right:0;height:7px;background:repeating-linear-gradient(135deg,var(--sail-red) 0 18px,var(--paper) 18px 36px)}
+.crew-label{display:inline-flex;gap:10px;align-items:center;color:var(--gold);font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;margin-bottom:9px}
+.crew-label:before{content:"";width:20px;height:2px;background:var(--gold)}
+.voyage-banner h2{font-family:Georgia,"Times New Roman",serif;font-size:clamp(27px,3.2vw,40px);font-weight:700;line-height:1.12;letter-spacing:-1px;margin:0 0 10px;color:var(--paper)}
+.voyage-banner h2 em{color:#b7d788;font-weight:400}
+.voyage-banner p{max-width:560px;font-size:13px;line-height:1.6;color:#c1d0d3;margin:0}
+.captain-portrait{position:relative;justify-self:center;width:170px;height:170px;border:7px solid #e5cea0;border-radius:50%;background:#03080c;box-shadow:0 0 0 2px var(--navy),0 0 0 4px #b8a17c}
+.captain-portrait img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.captain-portrait figcaption{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%) rotate(-4deg);white-space:nowrap;background:var(--sail-red);border:2px solid var(--paper);padding:3px 14px;color:var(--paper);font-size:10px;letter-spacing:.13em;font-weight:800;text-transform:uppercase}
+.route-label{display:flex;justify-content:space-between;gap:12px;align-items:baseline;color:var(--navy);margin:0 0 9px}
+.route-label h2{font-size:12px;text-transform:uppercase;letter-spacing:.13em;margin:0}
+.route-label span{font-size:11px;color:#576b6c}
+.levels{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-bottom:19px}
+.lvl{min-width:0;background:#fffaeb;border:1px solid #b9b8a6;border-radius:7px;color:var(--navy);padding:11px 13px;box-shadow:0 2px 0 #d7cfb8}
+.lvl span{color:#53696d;font-size:10px}
+.lvl b{font-size:14px}
+.lvl:hover{border-color:var(--navy)}
+.lvl.active{background:var(--spinach);border-color:var(--spinach);color:#fff6db;box-shadow:0 3px 0 #243f2b}
+.lvl.active span{color:#e0eacb}
+main{grid-template-columns:minmax(0,1fr) 300px;gap:18px}
+.stage{border:2px solid var(--navy);border-radius:12px;padding:12px;background:var(--navy);box-shadow:0 5px 0 #cfc5aa}
+.chart-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 5px 12px;color:#dddfd0}
+.chart-heading b{font-size:10px;text-transform:uppercase;letter-spacing:.14em}
+.chart-heading span{font-size:10px;color:#aec6cb}
+canvas{border-radius:7px;border:1px solid #46616a}
+.hint{max-width:90%;width:max-content;white-space:normal;text-align:center;bottom:55px;color:var(--paper);border-color:#5e777e;border-radius:6px;font-size:11px;background:rgba(18,48,68,.93)}
+.axis-note{font-size:10px;gap:10px}
+.card{border-radius:10px;background:#17374a;border:1px solid #294e5f;box-shadow:0 3px 0 #cfc5aa;padding:14px;margin-bottom:15px}
+.card h2{color:#dfd1ac;font-size:10px;letter-spacing:.16em;padding-bottom:9px;border-bottom:1px solid #365665;margin-bottom:12px}
+.seg button,.modes button{border-radius:6px;background:#102c3e;border-color:#436371}
+.seg button.active,.modes button.active{background:#3b603e;border-color:#b4cc87}
+.seg button.active span,.modes button.active span{color:#e0eacb}
+.btn{background:var(--sail-red);border:1px solid #c76a55;border-radius:7px;color:#fff6df;font-weight:800;box-shadow:0 3px 0 #0c2635}
+.btn.ghost{background:#1d4154;border-color:#4a6571;color:#f5ecd7;border-radius:7px;font-weight:600;box-shadow:none;font-size:13px}
+.btn:focus-visible,.lvl:focus-visible,.icon-btn:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #ebc161;outline-offset:3px}
+.note{font-size:11px;color:#b9cbd0}
+.tech{color:#a5bdc5}
+.rc{background:#fff5de;color:var(--navy);border:2px solid var(--navy);border-left:6px solid var(--sail-red);border-radius:10px;box-shadow:5px 5px 0 rgba(8,29,42,.25)}
+.rc .txt span{color:#52686e}
+.rc .art{border-radius:6px}
+.sheet,.doc{background:#163749;border:2px solid #b9a379;border-radius:14px;color:var(--ink)}
+.sheet .big-art{border-radius:8px}
+.score-num{background:none;color:#b7d788;-webkit-text-fill-color:#b7d788}
+.sheet .sub,.doc .small{color:#bdcdd0}
+.doc .kicker{color:var(--gold)}
+.doc p{color:#d8e2de}
+.step,.grade,.ph,.popeye-gallery figure{background:#102d3e;border-color:#456371;border-radius:8px}
+.callout{background:#284c3c;border-color:#608263;border-radius:8px}
+.callout b{color:#d0e3a4}
+.chip{background:#102d3e;border-color:#456371}
+.crew-footer{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:#52666a;font-size:11px;margin-top:22px;border-top:1px solid #c5bda6;padding-top:16px}
+.crew-footer b{color:var(--navy);letter-spacing:.12em;font-size:10px}
+.crew-footer a{color:#365d48;text-underline-offset:3px}
+#result{overflow-y:auto}
+@media(max-width:1050px){header{align-items:flex-start}.hud{max-width:520px}.pill{font-size:11px}.pill b{font-size:15px}}
+@media(max-width:900px){main{grid-template-columns:1fr}aside{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}.card{margin-bottom:0}.hud{max-width:none;margin-left:0;flex:1;justify-content:flex-end}.levels{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:640px){
+  .wrap{padding:16px 12px 28px}header{gap:15px}.logo h1{font-size:24px}.hud{flex-basis:100%;justify-content:flex-start;gap:6px}#roundTag{justify-content:flex-start}
+  .voyage-banner{grid-template-columns:minmax(0,1fr) 100px;padding:20px 18px 23px;gap:12px}.voyage-banner h2{font-size:27px}.voyage-banner p{font-size:11px}.crew-label{font-size:8px;letter-spacing:.1em}.captain-portrait{width:95px;height:95px;border-width:4px;margin:0}.captain-portrait figcaption{font-size:7px;padding:3px 7px;border-width:1px}
+  .route-label span{display:none}.levels{display:flex;overflow-x:auto;flex-wrap:nowrap;padding-bottom:5px;scroll-snap-type:x proximity}.lvl{flex:0 0 155px;scroll-snap-align:start}
+  aside{display:block}.card{margin-bottom:14px}.chart-heading span{display:none}.hint{font-size:9px;padding:5px 8px;bottom:46px}.axis-note{font-size:9px}.stage{padding:8px}.chart-heading{margin-bottom:8px}
+  #cards{left:10px;right:10px;bottom:12px}.rc{max-width:100%;padding:9px;gap:10px}.rc .art{width:108px;height:82px;flex-basis:108px}.rc .txt b{font-size:13px}.rc .txt span{font-size:10px}
+  #info{padding:12px}.doc{padding:18px}.sheet{padding:16px}.sheet h3{font-size:22px}.sheet .big-art{height:200px}.sheet .row{flex-wrap:wrap}.sheet .row .btn{flex:1 1 140px}#result{align-items:flex-start;padding:12px}.score-num{font-size:42px}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Visible AI demonstration and explicit handoff to the player. */
+.ai-status{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;margin:0 0 12px;background:#284c3c;border:1px solid #8eaf71;border-radius:7px;scroll-margin-top:12px}
+.ai-status[hidden],#takeTurn[hidden]{display:none}
+.ai-status b{display:block;font-size:15px;color:#f4ebd5}
+.ai-status span{display:block;font-size:12px;color:#d0dfc4;margin-top:3px}
+.ai-status .btn{width:auto;flex:0 0 auto;margin:0;font-size:13px}
+button:disabled{opacity:.55;cursor:not-allowed;transform:none!important;filter:none!important}
+@media(max-width:640px){.ai-status{align-items:stretch;flex-direction:column}.ai-status .btn{width:100%}}
+
+/* Real reaction GIFs, with still previews for reduced motion. */
+.rc .art,.sheet .big-art,.gallery-art{position:relative;background:#071a25}
+.famous-frame{display:block;width:100%;height:100%;object-fit:contain}
+.meme-credit{position:absolute;bottom:0;left:0;right:0;background:rgba(5,18,27,.85);color:#fff5db;font-size:8px;padding:3px 5px;text-align:center;line-height:1.25}
+.rc .txt small{display:block;font-size:9px;opacity:.65;margin-top:4px}
+.rc .txt .meme-lesson{font-size:12px;line-height:1.4;margin-top:6px;color:#294b53}
+.result-lesson{background:#284c3c;border-left:3px solid #a8cc7e;border-radius:4px;padding:9px 12px;margin:10px 0;color:#e4efd8;font-size:13px;line-height:1.5}
+.meme-gallery{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0}
+.meme-gallery figure{margin:0;background:#102d3e;border:1px solid #456371;border-radius:8px;overflow:hidden}
+.gallery-art{height:190px}
+.meme-gallery figcaption{padding:12px}
+.meme-gallery figcaption b{display:block;font-size:14px;margin-bottom:8px;line-height:1.4}
+.meme-gallery figcaption p{font-size:12px;line-height:1.5}
+.meme-gallery a,.doc a{color:#cce5a9}
+#cards{z-index:75}
+@media(max-width:640px){.meme-gallery{grid-template-columns:1fr}.rc .txt .meme-lesson{font-size:11px}.meme-credit{font-size:7px}}

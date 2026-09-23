@@ -62,7 +62,7 @@ class AnnniChain:
         """Exact expectation values and per-shot standard deviations.
 
         The standard deviations describe one Z-basis measurement of the whole
-        register, which is what a shot costs in the game.
+        register. Both correlators share each register readout; their covariance is retained by measurement.sample_joint.
         """
         probs = np.abs(state) ** 2
         probs = probs / probs.sum()

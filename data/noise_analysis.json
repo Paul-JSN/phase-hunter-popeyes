@@ -111,6 +111,7 @@
     "energy_error_relative_mean": 0.014781798509985214,
     "zz1_vs_exact_mean_abs": 0.02712546240701852,
     "zz2_vs_exact_mean_abs": 0.04215723044680804,
+    "points_above_0_05": 443,
     "refit_fraction": 0.7829861111111112
   }
 }

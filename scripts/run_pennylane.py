@@ -70,8 +70,8 @@ def scan(arguments) -> None:
 
     Each column of constant kappa is swept upward in h with the previous fit as
     the starting point. Every fit is compared against exact diagonalisation and
-    refitted from a cold start if it landed too high, so a bad local minimum
-    cannot quietly become a phase boundary.
+    refitted from a cold start if it landed too high. Keep the better fit and
+    report remaining preparation error; a retry does not guarantee convergence.
     """
     import numpy as np
 
@@ -86,6 +86,7 @@ def scan(arguments) -> None:
     out = {f"p{p}_{key}": np.zeros(shape) for p in arguments.noise for key in ("zz1", "zz2")}
     out.update({k: np.zeros(shape) for k in ("exact_zz1", "exact_zz2", "energy_vqe", "energy_exact", "refits")})
 
+    parameters = np.full(shape + (arguments.layers, n, 2), np.nan)
     started = time.time()
     for b, kappa in enumerate(kappas):
         params = None
@@ -95,9 +96,12 @@ def scan(arguments) -> None:
             params, energy = vqe_ground_state(n, float(kappa), float(h), layers=arguments.layers,
                                               steps=steps, init=params)
             if energy - energy_exact > arguments.energy_tol:      # bad minimum: start over
-                params, energy = vqe_ground_state(n, float(kappa), float(h), layers=arguments.layers,
+                candidate, candidate_energy = vqe_ground_state(n, float(kappa), float(h), layers=arguments.layers,
                                                   steps=arguments.steps, init=None)
+                if candidate_energy < energy:
+                    params, energy = candidate, candidate_energy
                 out["refits"][a, b] = 1
+            parameters[a,b] = params
             out["energy_vqe"][a, b], out["energy_exact"][a, b] = energy, energy_exact
             out["exact_zz1"][a, b], out["exact_zz2"][a, b] = correlators_from_state(state, n)
             for p in arguments.noise:
@@ -108,7 +112,9 @@ def scan(arguments) -> None:
         print(f"kappa {kappa:.3f}  {done:6.1%}  elapsed {elapsed/60:5.1f} min  "
               f"eta {elapsed/done*(1-done)/60:5.1f} min  refits {int(out['refits'].sum())}", flush=True)
         np.savez_compressed(ROOT / f"data/pennylane_scan_N{n}.npz", kappas=kappas, hs=hs,
-                            noise=np.array(arguments.noise), columns_done=b + 1, **out)
+                            noise=np.array(arguments.noise), columns_done=b + 1, parameters=parameters,
+                            layers=arguments.layers, steps=arguments.steps, warm_steps=arguments.warm_steps,
+                            energy_tol=arguments.energy_tol, **out)
 
     error = np.abs(out["energy_vqe"] - out["energy_exact"])
     print(json.dumps({"qubits": n, "grid": arguments.grid, "minutes": round((time.time() - started) / 60, 1),

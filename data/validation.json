@@ -1,0 +1,49 @@
+{
+  "pennylane_version": "0.44.1",
+  "matrix_cross_check": [
+    {
+      "kappa": 0.2,
+      "h": 0.4,
+      "max_matrix_difference": 5.329070518200751e-15,
+      "energy_numpy": -6.816385034791361,
+      "energy_pennylane": -6.816385034791363
+    },
+    {
+      "kappa": 0.8,
+      "h": 0.2,
+      "max_matrix_difference": 5.329070518200751e-15,
+      "energy_numpy": -6.502928201402121,
+      "energy_pennylane": -6.502928201402123
+    },
+    {
+      "kappa": 0.5,
+      "h": 1.5,
+      "max_matrix_difference": 0.0,
+      "energy_numpy": -13.193520790040754,
+      "energy_pennylane": -13.193520790040758
+    }
+  ],
+  "noise_channel_test": {
+    "CNOTs": 8,
+    "channel_after_each_target": true,
+    "finite_correlators": [
+      0.0,
+      0.0
+    ]
+  },
+  "clean_grid_crosscheck": {
+    "grid": [
+      40,
+      40
+    ],
+    "max_correlator_difference": 2.84e-14,
+    "max_energy_difference": 3.02e-14
+  },
+  "archived_noisy_scan": {
+    "path": "data/pennylane_scan_N8.npz",
+    "sha256": "cb133966a3bcc86e939603b97ebe2ea0ee4dd1ca6bd4121cf7633e3669ffd3f8",
+    "parameters_present": false,
+    "note": "Archived expectation values are unchanged. Circuit parameters and joint readouts were recovered separately in readout_N8.npz and checked against every archived energy and mean; see readout_validation.json.",
+    "archived_expectation_values_modified": false
+  }
+}

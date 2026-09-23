@@ -1,0 +1,33 @@
+{
+  "kappa": 0.8,
+  "h": 0.1,
+  "grid": 24,
+  "boundary": "periodic",
+  "scoring": "stage three-cluster classification vs analytic reference; reference floating cells excluded",
+  "rows": [
+    {
+      "qubits": 6,
+      "period_four_fits": false,
+      "zz2": -0.3319658911969008,
+      "minimum_possible_zz2": -0.3333333333333333,
+      "energy": -3.8952234029648207,
+      "agreement_excluding_floating": 0.4386
+    },
+    {
+      "qubits": 8,
+      "period_four_fits": true,
+      "zz2": -0.9959922019720224,
+      "minimum_possible_zz2": -1.0,
+      "energy": -6.42517899982754,
+      "agreement_excluding_floating": 0.9188
+    },
+    {
+      "qubits": 12,
+      "period_four_fits": true,
+      "zz2": -0.9960500500303304,
+      "minimum_possible_zz2": -1.0,
+      "energy": -9.637585857773018,
+      "agreement_excluding_floating": 0.9513
+    }
+  ]
+}

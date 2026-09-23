@@ -2,15 +2,9 @@
 
     python3 scripts/second_method.py
 
-1. Fidelity susceptibility. A method that shares nothing with the clustering:
-   take the overlap between ground states at neighbouring field values and look
-   for where it drops. Peaks mark transitions. If this agrees with the
-   correlator clustering, two unrelated methods are pointing at the same lines.
-
-2. Zero-noise extrapolation. We have correlators at p = 0.01 and p = 0.05, so we
-   can extrapolate each one back to p = 0 and compare with the clean data we
-   already hold. That both tests the multiplicative-attenuation claim the main
-   result rests on, and is the challenge's error-mitigation bonus.
+1. Fidelity susceptibility in a fixed symmetry sector, independent of clustering.
+2. Two-point extrapolation of infinite-shot expectations, compared against the
+   same variational circuit at p=0 (not against the exact ground state).
 """
 from __future__ import annotations
 
@@ -44,46 +38,12 @@ def overlay(axis, color="white", lw=1.4):
     axis.plot(right, kt_transition(right), color=color, lw=lw, ls=":")
 
 
-def degenerate_subspace(chain, kappa, h, tol=1e-3):
-    """The ground manifold, not just one vector.
-
-    On a finite ring the ordered phases have quasi-degenerate ground states (a
-    spin-flip doublet in the ferromagnet, a translation quartet in the antiphase)
-    and at h = 0 they are exactly degenerate. `eigh` then hands back an arbitrary
-    basis of that manifold, so the overlap of two neighbouring *vectors* is
-    meaningless. Comparing the whole manifold instead is gauge invariant.
-    """
-    values, vectors = np.linalg.eigh(chain.hamiltonian(kappa, h))
-    size = int(np.sum(values - values[0] < tol))
-    return vectors[:, :size]
-
-
-def subspace_fidelity(lo, hi):
-    """Product of the singular values of the overlap: 1 if the manifolds coincide."""
-    size = min(lo.shape[1], hi.shape[1])
-    singular = np.linalg.svd(lo[:, :size].conj().T @ hi[:, :size], compute_uv=False)
-    return float(np.prod(np.clip(singular, 0, 1)))
-
-
-def fidelity_susceptibility(n_qubits=8, grid=40):
-    """chi_F(kappa, h) from the overlap of neighbouring ground manifolds in h."""
-    chain = AnnniChain(n_qubits)
-    kappas = np.linspace(0, 1, grid)
-    hs = np.linspace(0, 2, grid)
-    dh = hs[1] - hs[0]
-    chi = np.zeros((grid, grid))
-    for b, kappa in enumerate(kappas):
-        manifolds = [degenerate_subspace(chain, float(kappa), float(h)) for h in hs]
-        for a in range(grid):
-            below, above = max(a - 1, 0), min(a + 1, grid - 1)
-            step = dh * (above - below)
-            chi[a, b] = 2 * (1 - subspace_fidelity(manifolds[below], manifolds[above])) / step ** 2
-    return kappas, hs, chi
+from src.fidelity import subspace_fidelity, fidelity_susceptibility
 
 
 def peak_positions(kappas, hs, chi):
     """For each kappa column, the field at which chi_F peaks."""
-    return np.array([hs[int(np.argmax(chi[:, b]))] for b in range(len(kappas))])
+    return np.array([hs[int(np.nanargmax(chi[:, b]))] for b in range(len(kappas))])
 
 
 def main() -> None:
@@ -114,6 +74,8 @@ def main() -> None:
         "mean_abs_deviation_kappa_above_0.85": float(np.abs(peaks - analytic)[corner].mean()),
         "mean_abs_gap_to_clustering": float(between.mean()),
         "grid_spacing_in_h": float(hs[1] - hs[0]),
+        "method": "unique ground state in translation-invariant, spin-flip-even sector; h=0 excluded",
+        "h_zero_excluded": True,
     }
     print("fidelity susceptibility vs analytic lines: "
           f"mean |Δh| = {deviation.mean():.3f} (grid spacing {hs[1]-hs[0]:.3f}); "
@@ -164,12 +126,12 @@ def main() -> None:
                            aspect="auto", cmap="magma")
     figure.colorbar(image, ax=axes[0], shrink=.85, label=r"$\log_{10}\chi_F$")
     overlay(axes[0], "white")
-    axes[0].set(xlabel=r"$\kappa$", ylabel="$h$", title="Fidelity susceptibility (independent method)")
+    axes[0].set(xlabel=r"$\kappa$", ylabel="$h$", title="Fidelity susceptibility (fixed symmetry sector)")
 
     axes[1].plot(kappas[usable], peaks[usable], "o-", color=TEAL, lw=2, ms=3.5, label="χ$_F$ peak")
     axes[1].plot(kappas[usable], cluster_edge[usable], "s--", color=PURPLE, lw=1.8, ms=3, label="our clustering")
     axes[1].plot(kappas[usable], analytic[usable], color=NAVY, lw=1.6, label="analytic")
-    axes[1].set(xlabel=r"$\kappa$", ylabel="$h$ of the boundary", title="Three ways to find the same line")
+    axes[1].set(xlabel=r"$\kappa$", ylabel="$h$ of the boundary", title="Boundary estimates: measured disagreement")
     axes[1].legend(frameon=False, fontsize=8)
 
     labels_plot = ["noisy\np=0.05", "linear\nextrapolation", "exponential\nextrapolation"]

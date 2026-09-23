@@ -6,3 +6,8 @@ matplotlib>=3.8
 # The Scientific Track environment pins this version:
 #   uv sync --project "Scientific Track"
 pennylane==0.44.1
+
+# N >= 10 sparse solver and PDF generation
+scipy>=1.11
+reportlab>=4.0
+pillow>=10

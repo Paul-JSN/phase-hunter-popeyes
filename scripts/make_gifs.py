@@ -1,106 +1,90 @@
-"""Record GIFs of the prototype for the README and the presentation video.
+"""Record the current nautical UI for the README.
 
-    python3 scripts/make_gifs.py          # needs playwright + pillow
+    python scripts/make_gifs.py  # pip install playwright pillow; playwright install chromium
 
-Writes figures/gameplay.gif (a full round: pings, reveal, reaction cards) and
-figures/memes.gif (the reaction cards cycling). Everything recorded is our own
-art and our own game - no third-party footage.
+Uses stable control IDs and measured element bounds. Captures the running game,
+including credited third-party GIFs and the team's preserved personal recordings.
 """
 from __future__ import annotations
-
+import io
+import math
 import pathlib
-import sys
-
 from PIL import Image
 from playwright.sync_api import sync_playwright
+ROOT=pathlib.Path(__file__).resolve().parents[1]
+FIGURES=ROOT/'figures'
+FRAME_MS=120
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-GAME = (ROOT / "game/index.html").as_uri()
-FIGURES = ROOT / "figures"
-FRAME_MS = 90
-
-
-def save(frames: list[bytes], path: pathlib.Path, width: int, ms: int = FRAME_MS) -> None:
-    import io
-    images = []
+def save(frames,path,width,ms=FRAME_MS):
+    if len(set(frames))<2:raise RuntimeError(f'{path.name}: recording is static')
+    images=[]
+    height=max(round(Image.open(io.BytesIO(raw)).height*width/Image.open(io.BytesIO(raw)).width) for raw in frames)
     for raw in frames:
-        image = Image.open(io.BytesIO(raw)).convert("RGB")
-        image = image.resize((width, round(image.height * width / image.width)), Image.LANCZOS)
-        images.append(image.quantize(colors=128, method=Image.MEDIANCUT, dither=Image.FLOYDSTEINBERG))
-    images[0].save(path, save_all=True, append_images=images[1:], duration=ms, loop=0, optimize=True)
-    print(f"{path.name}: {len(images)} frames, {path.stat().st_size/1e6:.2f} MB")
+        image=Image.open(io.BytesIO(raw)).convert('RGB')
+        image=image.resize((width,round(image.height*width/image.width)),Image.Resampling.LANCZOS)
+        canvas=Image.new('RGB',(width,height),(243,234,211));canvas.paste(image,(0,(height-image.height)//2))
+        images.append(canvas.quantize(colors=128,method=Image.Quantize.MEDIANCUT))
+    images[0].save(path,save_all=True,append_images=images[1:],duration=ms,loop=0,optimize=True)
+    with Image.open(path) as im:
+        if im.n_frames<2:raise RuntimeError(f'{path.name}: encoded GIF is static')
+        print(f'{path.name}: {im.n_frames} frames, {path.stat().st_size/1e6:.2f} MB')
 
+def dismiss(page):
+    page.keyboard.press('Escape')
+    page.wait_for_timeout(150)
 
-def gameplay(page) -> list[bytes]:
-    frames: list[bytes] = []
-    board = page.locator("#board").bounding_box()
-    panel = {"x": 0, "y": 0, "width": 1000, "height": 680}
+def panel(page):
+    page.locator('.stage').scroll_into_view_if_needed()
+    stage=page.locator('.stage').bounding_box();main=page.locator('main').bounding_box()
+    return {'x':math.floor(main['x']),'y':math.floor(stage['y']),
+            'width':math.ceil(main['width']),'height':math.ceil(stage['height'])}
 
-    def grab(n: int = 1) -> None:
+def gameplay(page):
+    frames=[]
+    def grab(n=1):
+        clip=panel(page)
         for _ in range(n):
-            frames.append(page.screenshot(clip=panel))
-            page.wait_for_timeout(40)
-
-    grab(4)
-    page.click("text=20 shots (1)")
-    for fx, fy in [(0.22, 0.78), (0.33, 0.62), (0.44, 0.52), (0.58, 0.46), (0.72, 0.62), (0.86, 0.74)]:
-        page.mouse.click(board["x"] + board["width"] * fx, board["y"] + board["height"] * fy)
-        page.wait_for_timeout(120)
-        grab(3)
-    page.click("text=500 shots (4)")
-    for fx, fy in [(0.5, 0.35), (0.65, 0.8)]:
-        page.mouse.click(board["x"] + board["width"] * fx, board["y"] + board["height"] * fy)
-        page.wait_for_timeout(120)
-        grab(3)
-    # drag one boundary handle down, then reveal
-    page.mouse.move(board["x"] + board["width"] * 0.08, board["y"] + board["height"] * 0.36)
-    page.mouse.down()
-    for step in range(6):
-        page.mouse.move(board["x"] + board["width"] * 0.08,
-                        board["y"] + board["height"] * (0.36 + 0.035 * step))
-        grab(1)
-    page.mouse.up()
-    grab(2)
-    page.click("#reveal")
-    page.wait_for_timeout(120)
-    grab(14)
+            frames.append(page.screenshot(clip=clip));page.wait_for_timeout(FRAME_MS)
+    grab(3)
+    page.locator('[data-shots="20"]').click()
+    for fx,fy in [(.22,.78),(.33,.62),(.44,.52),(.58,.46),(.72,.62),(.86,.74)]:
+        panel(page);b=page.locator('#board').bounding_box()
+        page.mouse.click(b['x']+b['width']*fx,b['y']+b['height']*fy);grab(3)
+    page.locator('[data-shots="500"]').click()
+    panel(page);b=page.locator('#board').bounding_box()
+    page.mouse.click(b['x']+b['width']*.50,b['y']+b['height']*.35);grab(4)
+    # The initial middle handle sits halfway along the actual canvas plot area.
+    geometry=page.evaluate('''() => ({x:PAD.l+(canvas.width-PAD.l-PAD.r)/2,
+        y:PAD.t+(canvas.height-PAD.t-PAD.b)/2,w:canvas.width,h:canvas.height})''')
+    b=page.locator('#board').bounding_box();x=b['x']+b['width']*geometry['x']/geometry['w'];y=b['y']+b['height']*geometry['y']/geometry['h']
+    page.mouse.move(x,y);page.mouse.down()
+    for offset in range(0,70,10):page.mouse.move(x,y+offset);grab()
+    page.mouse.up();grab(3)
+    # Include the full branding and upper game in the README's still preview.
+    page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(150)
+    page.screenshot(path=str(FIGURES/'gameplay.png'))
+    page.locator('#reveal').click();page.wait_for_timeout(200)
+    for _ in range(14):frames.append(page.screenshot());page.wait_for_timeout(FRAME_MS)
+    # Result is captured at the same output dimensions as the board sequence.
     return frames
 
-
-def memes(page) -> list[bytes]:
-    page.evaluate("""() => {
-      document.querySelector('main').style.display='none';
-      const box=document.getElementById('cards');
-      box.style.cssText='position:static;padding:20px;display:block;min-height:150px';
-    }""")
-    ids = page.evaluate("Object.keys(CARDS)")
-    frames: list[bytes] = []
-    clip = {"x": 14, "y": 52, "width": 420, "height": 126}
-    for card in ids:
-        page.evaluate("""(id) => {
-          document.querySelectorAll('.rc').forEach(e=>e.remove());
-          lastCard = 0; react(id, 'fires on: ' + id.replace(/_/g,' '));
-        }""", card)
-        page.wait_for_timeout(120)
-        for _ in range(7):
-            frames.append(page.screenshot(clip=clip))
-            page.wait_for_timeout(60)
+def memes(page):
+    ids=page.evaluate('FAMOUS_REACTIONS.previews.map(e=>FAMOUS_REACTIONS.byEvent[e])')
+    frames=[]
+    for id in ids:
+        page.evaluate("id=>react(id,'Game reaction preview',true)",id)
+        page.wait_for_timeout(200)
+        card=page.locator('#cards .rc');card.wait_for(state='visible')
+        for _ in range(8):frames.append(card.screenshot());page.wait_for_timeout(FRAME_MS)
     return frames
 
-
-def main() -> None:
+def main():
     FIGURES.mkdir(exist_ok=True)
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
-        page = browser.new_page(viewport={"width": 1000, "height": 700})
-        page.goto(GAME)
-        page.wait_for_timeout(900)
-        save(gameplay(page), FIGURES / "gameplay.gif", 720)
-        page.reload()
-        page.wait_for_timeout(700)
-        save(memes(page), FIGURES / "memes.gif", 460, ms=110)
+    with sync_playwright() as pw:
+        browser=pw.chromium.launch()
+        page=browser.new_page(viewport={'width':1280,'height':1000},device_scale_factor=1)
+        page.goto((ROOT/'game/index.html').as_uri());page.wait_for_function('window.PHASE_HUNTER_DATA && document.querySelector("#shots button")')
+        dismiss(page);save(gameplay(page),FIGURES/'gameplay.gif',900)
+        page.reload();dismiss(page);save(memes(page),FIGURES/'memes.gif',600,ms=150)
         browser.close()
-
-
-if __name__ == "__main__":
-    main()
+if __name__=='__main__':main()

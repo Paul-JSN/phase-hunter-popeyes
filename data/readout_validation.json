@@ -1,0 +1,14 @@
+{
+  "protocol": "whole-register Z; joint site-averaged C1/C2 outcomes",
+  "archive_sha256": "cb133966a3bcc86e939603b97ebe2ea0ee4dd1ca6bd4121cf7633e3669ffd3f8",
+  "grid": [
+    24,
+    24
+  ],
+  "max_recovery_difference": 1.1538547894929252e-12,
+  "cold_steps": 150,
+  "warm_steps": 60,
+  "layers": 4,
+  "seed": 0,
+  "minutes": 19.019670967260996
+}

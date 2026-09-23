@@ -6,10 +6,10 @@ A full 24 x 24 noisy scan at N = 12 is out of reach: the density matrix is
 4096 x 4096 and every point needs its own variational fit.  A *cut* is not.
 Two vertical lines through the plane -- one crossing the ferromagnet-to-
 paramagnet boundary, one crossing the antiphase-to-paramagnet boundary -- are
-enough to ask the only question that matters here:
+test a narrower, observable-level question:
 
-    at N = 12, does depolarizing noise still move the SCALE of the order
-    parameter and leave the LOCATION of the transition alone?
+    at N = 12, how closely does a scalar attenuation describe the signal,
+    and how much does rescaling recover a classifier threshold crossing?
 
 The p = 0 point is evaluated on default.qubit rather than default.mixed: with
 no channel the two are the same state, and the state-vector device is far
@@ -130,7 +130,13 @@ def crossing(hs, values, level):
 
 
 def analyse(record) -> dict:
-    report = {"qubits": record["qubits"], "cuts": {}}
+    rows_all = [row for cut in CUTS for row in record["cuts"][cut["name"]]]
+    errors = np.array([abs(row["energy"] - row["exact_energy"]) for row in rows_all])
+    hs_first = np.array([row["h"] for row in record["cuts"][CUTS[0]["name"]]])
+    report = {"qubits": record["qubits"], "points": len(rows_all),
+              "h_spacing": float(np.diff(hs_first).mean()),
+              "preparation_energy_error": {"mean": float(errors.mean()), "max": float(errors.max())},
+              "cuts": {}}
     for cut in CUTS:
         rows = record["cuts"].get(cut["name"], [])
         if len(rows) < 3:
@@ -175,7 +181,7 @@ def draw(record, report) -> None:
             color = colors.get(key, MUTED)
             axis.plot(hs, noisy, "o-", color=color, lw=1.8, ms=3.5, label=f"p = {key[1:]}")
             axis.axhline(THRESHOLD * values["attenuation_factor"], color=color, lw=0.9, ls=":")
-        axis.axvline(entry["analytic_boundary"], color=MUTED, lw=1)
+        axis.axvline(entry["analytic_boundary"], color=MUTED, lw=1, label="analytic reference")
         label = r"$|\langle ZZ\rangle_1|$" if cut["order"] == "zz1" else r"$|\langle ZZ\rangle_2|$"
         axis.set(xlabel="$h$", ylabel=label,
                  title=f"{cut['name']}  ($\\kappa$ = {cut['kappa']}, N = {record['qubits']})")
@@ -186,7 +192,7 @@ def draw(record, report) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--qubits", type=int, default=12, help="must divide by 4 or the antiphase cannot form")
+    parser.add_argument("--qubits", type=int, default=12, help="multiples of four accommodate an unfrustrated period-four stripe")
     parser.add_argument("--points", type=int, default=9)
     parser.add_argument("--h-min", type=float, default=0.1)
     parser.add_argument("--h-max", type=float, default=1.3)
@@ -198,12 +204,20 @@ def main() -> None:
     arguments = parser.parse_args()
 
     if arguments.qubits % 4:
-        print(f"warning: N = {arguments.qubits} does not divide by 4, so the antiphase cannot form "
-              f"(see Result 3). The second cut will be meaningless.")
+        print(f"N = {arguments.qubits} is not divisible by four; interpret the stripe cut as a frustrated finite ring.")
 
     record = json.loads(OUT.read_text()) if arguments.analyse_only else run(arguments)
+    expected_hs = np.linspace(arguments.h_min, arguments.h_max, arguments.points)
+    for cut in CUTS:
+        hs = np.array([row["h"] for row in record["cuts"].get(cut["name"], [])])
+        if hs.shape != expected_hs.shape or not np.allclose(hs, expected_hs):
+            raise SystemExit(f"Incomplete or unexpected cut: {cut['name']}. Expected {arguments.points} points; pass the matching grid arguments for a non-default scan.")
     report = analyse(record)
-    (ROOT / "data/large_n_cut_analysis.json").write_text(json.dumps(report, indent=2))
+    def json_finite(value):
+        if isinstance(value, dict): return {key: json_finite(item) for key, item in value.items()}
+        if isinstance(value, float) and not np.isfinite(value): return None
+        return value
+    (ROOT / "data/large_n_cut_analysis.json").write_text(json.dumps(json_finite(report), indent=2, allow_nan=False) + "\n")
     draw(record, report)
 
     print(f"\nN = {report['qubits']}")

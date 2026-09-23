@@ -10,8 +10,8 @@ Two classifications are produced at every noise level:
   recal  - centres re-fitted on the noisy data itself.
 
 The gap between them is the result: depolarizing noise attenuates correlators
-nearly multiplicatively, so a fixed rule reports the ordered phases shrinking
-while a recalibrated one still finds the boundaries.
+non-uniformly. A fixed rule reports a smaller ordered area, while recalibration
+largely preserves area on this grid; neither proves unchanged physical boundaries.
 """
 from __future__ import annotations
 
@@ -167,6 +167,7 @@ def main() -> None:
                                                        / data["energy_exact"]).mean()),
             "zz1_vs_exact_mean_abs": float(np.abs(data["p0.0_zz1"] - data["exact_zz1"]).mean()),
             "zz2_vs_exact_mean_abs": float(np.abs(data["p0.0_zz2"] - data["exact_zz2"]).mean()),
+            "points_above_0_05": int(np.sum((data["energy_vqe"]-data["energy_exact"])>0.05)),
             "refit_fraction": float(data["refits"].mean())},
     }
     (ROOT / "data/noise_analysis.json").write_text(json.dumps(report, indent=2))

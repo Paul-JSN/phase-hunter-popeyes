@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Phase Hunter</title>
+<title>Phase Hunter · Team Popeyes</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -157,21 +157,26 @@
   .ph span{font-size:12.5px;color:var(--muted)}
   .callout{background:#12302c;border:1px solid #2c6b62;border-radius:14px;padding:13px 16px;margin:12px 0}
   .callout b{color:var(--teal)}
+  .popeye-frame{display:block;width:100%;height:100%;object-fit:contain;background:#05080c}
+  .popeye-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:20px 0}
+  .popeye-gallery figure{margin:0;overflow:hidden;border:1px solid var(--edge);border-radius:14px;background:#0f1c2e}
+  .popeye-gallery img{height:auto;aspect-ratio:4/3}
+  .popeye-gallery figcaption{padding:12px;font-size:14px;line-height:1.4}
+  .popeye-gallery figcaption span{display:block;margin-top:6px;color:var(--muted);font-size:12px;text-transform:capitalize}
+  .doc a{color:var(--teal)}
+  @media(max-width:540px){.popeye-gallery{grid-template-columns:1fr}}
   @media (prefers-reduced-motion:reduce){.rc,#result.show,#info.show{animation:none}}
 </style>
+<link rel="stylesheet" href="popeye-theme.css?v=2">
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="logo">
-      <svg width="42" height="42" viewBox="0 0 52 52" aria-hidden="true">
-        <circle cx="26" cy="26" r="21" fill="#34C2B0" stroke="#0B1424" stroke-width="2.4"/>
-        <path d="M26 5 v11 M20 10 l6 -5 l6 5" stroke="#fff" stroke-width="2.6" fill="none"
-              stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="19" cy="23" r="3" fill="#0B1424"/><circle cx="33" cy="23" r="3" fill="#0B1424"/>
-        <path d="M19 33 q7 6 14 0" stroke="#0B1424" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <svg class="crew-mark" viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="20" cy="7" r="4"/><path d="M20 11v22 M11 16h18 M6 23q0 12 14 10q14 2 14-10 M6 23l-3 5 M6 23l5 3 M34 23l3 5 M34 23l-5 3"/>
       </svg>
-      <div><h1>Phase Hunter</h1><small>find the hidden phases</small></div>
+      <div><h1>Phase Hunter</h1><small>Team Popeyes · Quantum explorers</small></div>
     </div>
     <div class="hud">
       <div class="pill">⚡ <b id="energy">60</b><div class="bar"><i id="energyBar" style="width:100%"></i></div></div>
@@ -189,10 +194,27 @@
     </div>
   </header>
 
-  <div class="levels" id="levels"></div>
+  <section class="voyage-banner" aria-label="Welcome aboard Team Popeyes">
+    <div>
+      <div class="crew-label">Team Popeyes presents · Q-SITE 2026</div>
+      <h2>A little spinach.<br><em>A lot of quantum.</em></h2>
+      <p>Chart the hidden phases of a quantum magnet. Spend your scans wisely,<br class="desktop-break"> find the boundary, and see if you can outsmart the AI.</p>
+    </div>
+    <figure class="captain-portrait">
+      <img src="assets/popeye/popeye.png" alt="Classic Popeye at the ship's wheel" width="170" height="170">
+      <figcaption>All hands on deck</figcaption>
+    </figure>
+  </section>
+  <div class="route-label"><h2>Choose your waters</h2><span>Five stages · one scientific adventure</span></div>
+  <div class="levels" id="levels" aria-label="Choose a stage"></div>
 
   <main>
-    <section class="stage">
+    <section class="stage" aria-label="Phase map">
+      <div class="chart-heading"><b>Your uncharted quantum sea</b><span>Scan · draw · reveal</span></div>
+      <div class="ai-status" id="aiStatus" hidden>
+        <div><b id="aiStatusTitle" role="status" aria-live="polite"></b><span id="aiStatusDetail"></span></div>
+        <button class="btn" id="takeTurn" hidden>Your turn — same map</button>
+      </div>
       <canvas id="board" width="720" height="560"></canvas>
       <div class="hint" id="hint">Tap the fog to scan · drag the orange line to call the border</div>
       <div id="coach"><div class="n" id="coachN">1</div><div class="t" id="coachT"></div>
@@ -207,8 +229,7 @@
       <div class="card">
         <h2>Scan power</h2>
         <div class="seg" id="shots"></div>
-        <div class="note" style="margin-top:9px">Weak scans are cheap and lie to you. Strong scans cost
-          four times as much and tell the truth.</div>
+        <div class="note" style="margin-top:9px">Weak scans fluctuate more. Deep scans cost four times as much and reduce sampling uncertainty; gate noise remains.</div>
       </div>
 
       <div class="card">
@@ -225,8 +246,9 @@
         <button class="btn" id="reveal">Reveal &amp; score</button>
         <div class="row">
           <button class="btn ghost" id="agent">Send the AI</button>
-          <button class="btn ghost" id="reset">Restart</button>
+          <button class="btn ghost" id="reset">Retry same map</button>
         </div>
+        <button class="btn ghost" id="newMap">New map</button>
         <button class="btn ghost" id="template" style="display:none">Start me with a V</button>
         <div class="note" id="agentNote" style="margin-top:9px">Drag the orange handles so the line
           splits the ordered regions from the chaotic one, then reveal.</div>
@@ -270,13 +292,28 @@
       <div class="card">
         <h2>Reactions</h2>
         <div class="row">
-          <button class="btn ghost" id="memes">Memes: on</button>
-          <button class="btn ghost" id="clips">Clips: on</button>
+          <button class="btn ghost" id="memes" aria-pressed="true">Memes: on</button>
+          <button class="btn ghost" id="clips" aria-pressed="true">Personal memes: on</button>
         </div>
-        <button class="btn ghost" id="testMeme">Preview a card</button>
+        <button class="btn ghost" id="famous" aria-pressed="true">Famous meme GIFs: on</button>
+        <div class="row">
+          <button class="btn ghost" id="testMeme">Preview my recordings</button>
+          <button class="btn ghost" id="previewFamous">Preview GIF 1/12</button>
+        </div>
+        <button class="btn ghost" id="famousGallery">Browse all 12 GIFs + lessons</button>
+        <div class="row">
+          <button class="btn ghost" id="popeye" aria-pressed="true">Popeyes: on</button>
+          <button class="btn ghost" id="previewPopeye">Preview Popeye 1/13</button>
+        </div>
+        <button class="btn ghost" id="popeyeGallery">Popeye: 3 stills, 13 captions</button>
+        <div class="note" id="memeMode" style="margin-top:9px"></div>
+        <div class="note" style="margin-top:7px">Popeye supplies fallback reactions. GIFs are silent; each reaction includes a bite-size lesson.</div>
       </div>
     </aside>
   </main>
+  <footer class="crew-footer"><b>TEAM POPEYES · STRONG TO THE FINISH</b>
+    <span>Quantum Coalition Scientific Track · <a href="assets/popeye/CREDITS.md" target="_blank" rel="noopener">Cartoon credits</a></span>
+  </footer>
 </div>
 
 <div id="cards" aria-live="polite"></div>
@@ -285,6 +322,9 @@
 
 <script src="dataset.js"></script>
 <script src="memes.js"></script>
+<script src="popeye-memes.js?v=classic-2"></script>
+<script src="famous-memes.js?v=2"></script>
+<script src="measurement.js"></script>
 <script>
 const PHASE = {FERRO:0, PARA:1, ANTI:2, FLOAT:3};
 const COLORS = ["#34C2B0","#E08B45","#9B7BD4","#5C9BD1"];
@@ -297,9 +337,10 @@ const HANDLES = 5;
 let data=null, stage=0, shots=100, energy=60, pings=[], revealed=false, drag=null;
 let view={b0:0,b1:0,a0:0,a1:0};                 // the window of the plane this round shows
 let handles=[];                                  // {t: 0..1 across the window, h: field value}
-let best = Number(localStorage.getItem("ph_best")||0) || null;
+let best = Number(localStorage.getItem("ph_v2_best")||0) || null;
 let mode = localStorage.getItem("ph_mode") || "practice";
 let tutorial = 0, round = 0;
+let aiRunning=false, aiPreview=false, aiRunId=0, aiPlayerShots=100;
 
 const st = () => data.stages[stage];
 const kLo = () => data.kappas[view.b0], kHi = () => data.kappas[view.b1];
@@ -326,6 +367,9 @@ function orderedFraction(v){
   return total? ord/total : 0;
 }
 function newRound(){
+  cancelAgent();
+  document.getElementById('cards').innerHTML='';lastCard=0;
+  document.getElementById("aiStatus").hidden=true;
   round++;
   const n=data.grid, span=(lo,hi)=>lo+Math.floor(Math.random()*(hi-lo+1));
   /* keep windows that actually contain a border: a window that is all one phase
@@ -339,12 +383,12 @@ function newRound(){
   const mid=(hLo()+hHi())/2;
   handles=[...Array(HANDLES)].map((_,i)=>({t:i/(HANDLES-1), h:mid}));
   energy = mode==="practice" ? 90 : 60;
-  pings=[]; revealed=false; cheapPings=0; agentScore=null;
+  pings=[]; revealed=false; cheapPings=0; agentScore=null; lastAttempt=null;
   document.getElementById("agentNote").textContent =
     "Drag the five handles so the line splits order from chaos, then reveal.";
   document.getElementById("hint").classList.remove("gone");
   document.getElementById("roundTag").textContent = `round ${round} · κ ${kLo().toFixed(2)}–${kHi().toFixed(2)} · h ${hLo().toFixed(2)}–${hHi().toFixed(2)}`;
-  hud(); draw();
+  syncButtons(); hud(); draw();
 }
 
 function buildUI(){
@@ -380,26 +424,45 @@ function hud(){
   document.getElementById("pings").textContent=pings.length;
 }
 function nearestIndex(arr,v,lo,hi){let b=lo,bd=1e9;for(let i=lo;i<=hi;i++){const d=Math.abs(arr[i]-v);if(d<bd){bd=d;b=i;}}return b;}
-function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 
-let memesOn=true, useClips=true, lastCard=0, cheapPings=0, agentScore=null;
+function memePreference(key){try{return localStorage.getItem('ph_meme_'+key)!=='off';}catch(e){return true;}}
+let popeyeOn=memePreference('popeye'), popeyePreview=0;
+let memesOn=memePreference('all'), useClips=memePreference('personal'), famousOn=memePreference('famous');
+let lastCard=0, cheapPings=0, agentScore=null, mixedMemeCount=0, personalPreview=0, famousPreview=0, lastAttempt=null;
 const CLIPS = {beat_agent:"clips/cards/beat_agent.webm", reveal_low:"clips/cards/reveal_low.webm",
                noisy_ping:"clips/cards/noisy_ping.webm", broke:"clips/cards/broke.webm",
                reveal_high:"clips/cards/reveal_high.webm"};
+function reducedMotion(){return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);}
+function chooseReaction(id){
+  if(id.startsWith('popeye_')||id.startsWith('famous_')) return id;
+  if(famousOn&&FAMOUS_REACTIONS.byEvent[id]){
+    // Alternate only when a personal recording actually exists for this event.
+    if(useClips&&CLIPS[id]&&mixedMemeCount++%2===1) return id;
+    return FAMOUS_REACTIONS.choose(id);
+  }
+  id=FAMOUS_REACTIONS.fallbacks[id]||id;
+  return POPEYE_REACTIONS.choose(id,popeyeOn,Boolean(useClips&&CLIPS[id]));
+}
+function reactionLesson(id){return FAMOUS_REACTIONS.lesson(id);}
 function art(id){
+  if(id.startsWith('famous_')) return FAMOUS_REACTIONS.art(id,reducedMotion());
   if (useClips && CLIPS[id])
-    return `<video src="${CLIPS[id]}" autoplay muted loop playsinline
+    return `<video src="${CLIPS[id]}" ${reducedMotion()?'controls preload="metadata"':'autoplay loop'} muted playsinline
               onerror="this.parentNode.innerHTML=SCENES[CARDS['${id}'].scene]"
               style="width:100%;height:100%;object-fit:cover"></video>`;
   return SCENES[CARDS[id].scene]||"";
 }
-function react(id, detail){
+function react(id, detail, preview=false, important=false){
   if(!memesOn||!CARDS[id]) return;
-  const now=Date.now(); if(now-lastCard<1200) return; lastCard=now;
+  const now=Date.now(); if(!preview&&!important&&now-lastCard<3500) return; lastCard=now;
+  const lesson=reactionLesson(id);
+  if(!preview) id=chooseReaction(id);
   const card=document.createElement("div"); card.className="rc";
-  card.innerHTML=`<div class="art">${art(id)}</div><div class="txt"><b>${CARDS[id].text}</b>${detail?`<span>${detail}</span>`:""}</div>`;
+  card.innerHTML=`<div class="art">${art(id)}</div><div class="txt"><b>${CARDS[id].text}</b><span class="meme-lesson">${lesson}</span>${detail?`<span>${detail}</span>`:""}<small>Tap to dismiss</small></div>`;
   const kill=()=>{card.classList.add("out"); setTimeout(()=>card.remove(),260);};
-  card.onclick=kill; document.getElementById("cards").appendChild(card); setTimeout(kill,4400);
+  card.onclick=e=>{if(reducedMotion()&&e.target.closest('video')) return;kill();};
+  document.getElementById("cards").innerHTML='';
+  document.getElementById("cards").appendChild(card); setTimeout(kill,6500);
 }
 
 /* ---------- verdicts, used by practice mode and by the AI ---------- */
@@ -415,27 +478,27 @@ function contradicts(r){
   return (v.t==="ORDER") !== (r.h < curveAt(r.k));
 }
 
-function ping(k,h,cost=true){
+function ping(k,h,cost=true,automated=false){
+  if(revealed || ((aiRunning||aiPreview)&&!automated)) return null;
   if(cost && energy<COST[shots]) { react("broke",`${pings.length} scans spent`); return null; }
   const a=nearestIndex(data.hs,h,view.a0,view.a1), b=nearestIndex(data.kappas,k,view.b0,view.b1), sg=st();
-  const r={k:data.kappas[b], h:data.hs[a], shots,
-           zz1: sg.zz1[a][b] + sg.sd1[a][b]/Math.sqrt(shots)*gauss(),
-           zz2: sg.zz2[a][b] + sg.sd2[a][b]/Math.sqrt(shots)*gauss()};
+  const sampled=Measurement.sample(sg.readout[a][b],sg.outcomes,shots);
+  const r={k:data.kappas[b], h:data.hs[a], shots, zz1:sampled[0], zz2:sampled[1]};
   if(cost){
     energy-=COST[shots]; pings.push(r);
-    const sigma=sg.sd1[a][b]/Math.sqrt(shots);
-    const repeat=pings.slice(0,-1).some(q=>q.k===r.k&&q.h===r.h);
+    if(!automated){
+    const repeat=pings.slice(0,-1).findLast(q=>q.k===r.k&&q.h===r.h);
     if(pings.length===1){ document.getElementById("hint").classList.add("gone");
       react("first_ping",`${shots} shots at κ=${r.k.toFixed(2)}, h=${r.h.toFixed(2)}`); }
-    else if(Math.abs(r.zz1-sg.zz1[a][b])>2*sigma)
-      react("noisy_ping",`read ${r.zz1.toFixed(2)} · truth ${sg.zz1[a][b].toFixed(2)} · ${shots} shots`);
-    else if(repeat) react("repeat_ping");
-    else if(data.reference[a][b]===PHASE.FLOAT) react("floating_hit","that scan landed in the drifting sliver");
+    else if(repeat) react(repeat.zz1!==r.zz1||repeat.zz2!==r.zz2?'repeat_changed':'repeat_ping');
+    else if(shots===20 && Math.abs(r.zz1)>0.8)
+      react("noisy_ping",`read ${r.zz1.toFixed(2)} · ${shots} shots · repeat to check`);
     else if(shots===500) react("big_spend","4 energy for one sharp reading");
     else if(shots===20 && ++cheapPings===5) react("cheap_habit","five weak scans and counting");
     if(energy<COST[20]) react("broke",`${pings.length} scans spent`);
     if(tutorial===1 && r.h < hLo()+0.35*(hHi()-hLo())) step(2);
     else if(tutorial===2 && r.h > hLo()+0.7*(hHi()-hLo())) step(3);
+    }
   }
   hud(); return r;
 }
@@ -520,7 +583,7 @@ function axes(){
 }
 
 canvas.addEventListener("pointerdown",e=>{
-  if(!data) return;
+  if(!data || revealed || aiRunning || aiPreview) return;
   const r=canvas.getBoundingClientRect();
   const x=(e.clientX-r.left)*canvas.width/r.width, y=(e.clientY-r.top)*canvas.height/r.height;
   for(const p of handles){
@@ -531,7 +594,7 @@ canvas.addEventListener("pointerdown",e=>{
   if(k>=kLo()&&k<=kHi()&&h>=hLo()&&h<=hHi()){ ping(k,h); draw(); }
 });
 canvas.addEventListener("pointermove",e=>{
-  if(!drag) return;
+  if(!drag || revealed || aiRunning || aiPreview) return;
   const r=canvas.getBoundingClientRect();
   drag.h=Math.max(hLo(),Math.min(hHi(),toH((e.clientY-r.top)*canvas.height/r.height))); draw();
 });
@@ -539,10 +602,13 @@ window.addEventListener("pointerup",()=>{ if(drag&&tutorial===3) step(4); drag=n
 
 function stars(s){ return s>=.95?"★★★":s>=.88?"★★☆":s>=.75?"★☆☆":"☆☆☆"; }
 function showResult(id, s){
-  const beat = agentScore!==null && s>agentScore;
+  document.getElementById('cards').innerHTML='';
+  const lesson=reactionLesson(id);
+  if(memesOn) id=chooseReaction(id);
   document.getElementById("sheet").innerHTML = `
-    <div class="big-art">${art(id)}</div>
-    <h3>${CARDS[id].text}</h3>
+    ${memesOn?`<div class="big-art">${art(id)}</div>`:''}
+    <h3>${memesOn?CARDS[id].text:'Your expedition results'}</h3>
+    <p class="result-lesson">${lesson}</p>
     <div class="sub">${st().name} · ${st().sub} · round ${round}</div>
     <div class="scores">
       <div><div class="score-num">${(s*100).toFixed(1)}%</div><div class="sub">map called correctly</div></div>
@@ -565,45 +631,115 @@ function showResult(id, s){
   const next=document.getElementById("next");
   if(next) next.onclick=()=>{hideResult(); stage++; newRound(); syncButtons();
                              react("noise_up",`${st().name}: ${st().sub}`);};
-  if(beat) react("beat_agent",`you ${(s*100).toFixed(1)}% · AI ${(agentScore*100).toFixed(1)}%`);
+  // The result already celebrates a win; avoid covering it with a second reaction.
 }
 function hideResult(){ document.getElementById("result").classList.remove("show"); }
 
 document.getElementById("reveal").onclick=()=>{
+  if(revealed || aiRunning || aiPreview) return;
+  drag=null;
   if(tutorial) stopTutorial();
   revealed=true; draw();
   const s=score();
-  if(!best||s*100>best){ best=s*100; try{localStorage.setItem("ph_best",best);}catch(e){} }
+  const spent=(mode==='practice'?90:60)-energy;
+  const id=resultEvent(s,best,spent);
+  if(!best||s*100>best){ best=s*100; try{localStorage.setItem("ph_v2_best",best);}catch(e){} }
   document.getElementById("best").textContent=best.toFixed(0)+"%";
-  const id = (agentScore!==null&&s>agentScore) ? "beat_agent"
-           : (agentScore!==null&&s<agentScore) ? "lost_agent"
-           : s>=0.95 ? "reveal_high" : s>=0.80 ? "reveal_mid" : "reveal_low";
+  lastAttempt={score:s,spent};
   showResult(id,s);
 };
-document.getElementById("reset").onclick=()=>{hideResult(); newRound();};
-
-document.getElementById("agent").onclick=()=>{
-  newRoundKeepView(); shots=100; syncButtons();
-  const found=[];
-  handles.forEach(p=>{
-    const k=kLo()+p.t*(kHi()-kLo());
-    let lo=hLo(), hi=hHi();
-    for(let s=0;s<3 && energy>=COST[shots];s++){
-      const mid=(lo+hi)/2, r=ping(k,mid,true); if(!r) break;
-      if(verdict(r).t==="CHAOS") hi=mid; else lo=mid;
-    }
-    found.push((lo+hi)/2);
-  });
-  handles.forEach((p,i)=>p.h=found[i]);
-  draw(); agentScore=score();
-  document.getElementById("agentNote").innerHTML =
-    `The AI spent ${pings.length} scans and would score <b>${(agentScore*100).toFixed(1)}%</b>.
-     Restart and beat it on this same map.`;
-};
-function newRoundKeepView(){          // same window, fresh budget - so you can race the AI fairly
-  energy = mode==="practice" ? 90 : 60; pings=[]; revealed=false; cheapPings=0;
-  const mid=(hLo()+hHi())/2; handles.forEach(p=>p.h=mid); hud(); draw();
+function resultEvent(s,previousBest,spent){
+  if(pings.length===0) return 'no_scans';
+  if(agentScore!==null&&s>agentScore) return 'beat_agent';
+  if(s>=.95) return 'reveal_high';
+  if(previousBest!==null&&s*100>previousBest) return 'personal_best';
+  if(lastAttempt&&spent>lastAttempt.spent&&spent>=(mode==='practice'?90:60)*.75&&s<=lastAttempt.score) return 'overspend';
+  if(agentScore!==null&&s<agentScore) return 'lost_agent';
+  return s>=.80?'reveal_mid':'reveal_low';
 }
+document.getElementById("reset").onclick=()=>{hideResult(); newRoundKeepView();};
+document.getElementById("newMap").onclick=()=>{hideResult(); newRound();};
+
+function syncAgentControls(){
+  const locked=aiRunning||aiPreview;
+  document.getElementById("agent").disabled=aiRunning;
+  document.getElementById("agent").textContent=aiRunning?"AI scanning…":"Send the AI";
+  document.getElementById("reveal").disabled=locked;
+  document.getElementById("template").disabled=locked;
+  document.getElementById("takeTurn").hidden=!aiPreview;
+  [...document.getElementById("shots").children].forEach(b=>b.disabled=locked);
+}
+function cancelAgent(){
+  ++aiRunId; // Invalidate any pending animation before the stage/mode/map changes.
+  if(aiRunning||aiPreview) shots=aiPlayerShots;
+  aiRunning=false; aiPreview=false;
+  syncAgentControls();
+}
+function agentStatus(title,detail){
+  document.getElementById("aiStatus").hidden=false;
+  document.getElementById("aiStatusTitle").textContent=title;
+  document.getElementById("aiStatusDetail").textContent=detail;
+}
+function newRoundKeepView(){
+  cancelAgent();
+  document.getElementById('cards').innerHTML='';lastCard=0;
+  energy = mode==="practice" ? 90 : 60; pings=[]; revealed=false; cheapPings=0; drag=null;
+  const mid=(hLo()+hHi())/2; handles.forEach(p=>p.h=mid);
+  document.getElementById("hint").classList.remove("gone");
+  if(agentScore!==null){
+    agentStatus(`Your turn · beat ${(agentScore*100).toFixed(1)}%`,"Same map. Fresh energy budget. Drag your own boundary, then reveal.");
+    document.getElementById("agentNote").textContent=`AI target: ${(agentScore*100).toFixed(1)}%. Your budget is restored; retry keeps this map and target.`;
+  }else{
+    document.getElementById("aiStatus").hidden=true;
+    document.getElementById("agentNote").textContent="Drag the five handles so the line splits order from chaos, then reveal.";
+  }
+  syncButtons(); hud(); draw();
+}
+
+document.getElementById("agent").onclick=async()=>{
+  if(!data||aiRunning) return;
+  hideResult(); stopTutorial(); newRoundKeepView();
+  agentScore=null; aiPlayerShots=shots;
+  const run=++aiRunId;
+  aiRunning=true; shots=100; syncButtons(); syncAgentControls();
+  const totalPings=energy/COST[shots];
+  document.getElementById("hint").classList.add("gone");
+  agentStatus(`AI scanning · 0 / ${totalPings}`,"Watch the scans and orange boundary. Retry or New map cancels this run.");
+  document.getElementById("agentNote").textContent="The AI is exploring the map. Its boundary will stay visible when it finishes.";
+  document.getElementById("aiStatus").scrollIntoView({block:"start",behavior:"auto"});
+  react('ai_start','Watch the orange boundary move.',false,true);
+  try{
+    for(let i=0;i<handles.length;i++){
+      const p=handles[i], k=kLo()+p.t*(kHi()-kLo());
+      let lo=hLo(), hi=hHi();
+      const allowance=Math.floor(totalPings/HANDLES)+(i<totalPings%HANDLES?1:0);
+      for(let attempt=0;attempt<allowance;attempt++){
+        if(run!==aiRunId) return;
+        const r=ping(k,(lo+hi)/2,true,true);
+        if(!r) throw new Error("AI scan could not be completed");
+        if(ordered(r.zz1,r.zz2)>0.46) lo=(lo+hi)/2; else hi=(lo+hi)/2;
+        p.h=(lo+hi)/2; draw();
+        document.getElementById("aiStatusTitle").textContent=`AI scanning · ${pings.length} / ${totalPings}`;
+        // Yield between scans so the browser paints each measurement and boundary move.
+        await new Promise(resolve=>setTimeout(resolve,110));
+      }
+    }
+    if(run!==aiRunId) return;
+    agentScore=score(); aiRunning=false; aiPreview=true;
+    syncButtons(); syncAgentControls();
+    agentStatus(`AI finished · ${(agentScore*100).toFixed(1)}%`,`${pings.length} scans · 100 shots each · ${totalPings*COST[100]} energy. This is the AI's boundary, not your score.`);
+    document.getElementById("agentNote").textContent=`AI target: ${(agentScore*100).toFixed(1)}%. Inspect its boundary, then press “Your turn — same map” above the chart.`;
+  }catch(error){
+    if(run!==aiRunId) return;
+    agentScore=null; newRoundKeepView();
+    agentStatus("AI run interrupted","Your controls and budget are restored. You can try Send the AI again.");
+    console.error("AI run failed",error);
+  }
+};
+document.getElementById("takeTurn").onclick=()=>{
+  if(!aiPreview) return;
+  newRoundKeepView();
+};
 
 function syncMode(){
   [...document.getElementById("modes").children].forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
@@ -613,9 +749,10 @@ function syncMode(){
 }
 document.getElementById("modes").onclick=e=>{
   const b=e.target.closest("button[data-mode]"); if(!b) return;
-  mode=b.dataset.mode; if(mode==="hunter") stopTutorial(); syncMode(); newRoundKeepView();
+  agentScore=null; document.getElementById("agentNote").textContent="New mode: send the AI for a fresh target."; mode=b.dataset.mode; if(mode==="hunter") stopTutorial(); syncMode(); newRoundKeepView();
 };
 document.getElementById("template").onclick=()=>{   // a V across whatever window you were given
+  if(revealed || aiRunning || aiPreview) return;
   handles.forEach(p=>{
     const k=kLo()+p.t*(kHi()-kLo());
     const guess = k<0.5 ? 1.0-1.9*k : 1.05*Math.sqrt(Math.max(k-0.5,0)*Math.max(k-0.1,0));
@@ -642,13 +779,13 @@ const HOW_TO_PLAY = `
       <span>Click anywhere to measure. The big dot shows how much neighbours agree; the little dot shows
       how much next-door-but-one agree. That pair is the fingerprint of each phase.</span></div></div>
     <div class="step"><div class="n">2</div><div><b>Choose your scan power</b>
-      <span>Weak costs ⚡1 and can be wildly wrong. Deep costs ⚡4 and is close to the truth. You start
+      <span>Weak costs ⚡1 and fluctuates more. Deep costs ⚡4 and reduces sampling uncertainty. You start
       with ⚡60 — that's about fifteen deep scans, or sixty cheap ones.</span></div></div>
     <div class="step"><div class="n">3</div><div><b>Call the border</b>
       <span>Drag the five orange handles. Below the line you're claiming order — locked-together or
       striped, whichever lives there — and above it chaos.</span></div></div>
     <div class="step"><div class="n">4</div><div><b>Reveal</b>
-      <span>The true map appears and every square is checked against your call.</span></div></div>
+      <span>The stage classification appears; scored squares are checked against your call.</span></div></div>
   </div>
 
   <h4>Reading the colours</h4>
@@ -666,8 +803,7 @@ const HOW_TO_PLAY = `
       Dark disc, pale centre — nothing correlates with anything.
       <b style="color:#E08B45">Scrambled</b>.</div>
   </div>
-  <p class="small">The revealed map uses those same four phase colours, so once you can read a scan you
-  can predict what the reveal will show before you press it.</p>
+  <p class="small">The revealed map uses three classified phase colours. The floating band is a reference exclusion, not a fourth detected region.</p>
 
   <h4>How you win</h4>
   <div class="grade">
@@ -677,8 +813,8 @@ const HOW_TO_PLAY = `
     <span class="s">☆☆☆</span><span>Bro took the scenic route.</span><span class="v">below 75%</span>
   </div>
   <p class="small" style="margin-top:10px">There's a second way to win: press <b>Send the AI</b> and it
-  plays the same map with the same budget, bisecting its way down each column. Beating its score is the
-  real flex, and the game tells you when you've done it.</p>
+  plays the same map with the same budget. Watch its scans and boundary move, then press
+  <b>Your turn — same map</b> above the chart. You get a fresh budget and keep its score as your target.</p>
 
   <h4>How you lose</h4>
   <p>Energy runs out and you're still guessing. Weak scans are the usual culprit — they're cheap because
@@ -691,10 +827,10 @@ const HOW_TO_PLAY = `
   disagrees with, hands you a rough V to start from, and gives you ⚡90 instead of ⚡60. Hunter mode
   takes all of that away.</div>
 
-  <div class="callout"><b>Every round is a new map.</b> When you reveal, the next round crops a
+  <div class="callout"><b>Choose a new map or a rematch.</b> New map crops a
   different window of the parameter plane — a different stretch of κ and h — so the border sits
-  somewhere new and memorising handle positions gets you nothing. The five stages are different physics
-  too: ring length and gate noise change, and each has its own true map.</div>
+  somewhere new. Retry same map preserves the current window and AI target. New map resets both. The five stages are different physics
+  too: ring length and gate noise change, and each has its own scoring map.</div>
 
   <div class="callout"><b>One honest caveat.</b> A thin drifting sliver (the floating phase) exists on the
   right-hand side, and we don't ask you to draw it — it's too narrow to resolve at this size, so those
@@ -709,7 +845,7 @@ const THE_SCIENCE = `
   <p>You are looking at the phase diagram of the <b>1D ANNNI model</b> — the axial next-nearest-neighbour
   Ising chain — computed for real. Eight spins on a ring, ground states from
   <b>H = −Σ Z<sub>i</sub>Z<sub>i+1</sub> + κ Σ Z<sub>i</sub>Z<sub>i+2</sub> − h Σ X<sub>i</sub></b>,
-  and every scan you take is sampled from those actual quantum states.</p>
+  and scans sample joint whole-register Z outcomes from precomputed quantum-state probabilities. This is a classical simulation of a quantum system, with no claimed quantum speedup.</p>
 
   <h4>Three forces walk into a spin chain</h4>
   <p>Neighbours want to agree. Spins two apart want to <i>disagree</i> (that's κ, the frustration). And
@@ -728,36 +864,26 @@ const THE_SCIENCE = `
       to see on eight spins.</span></div>
   </div>
 
-  <h4>Why your cheap scans lie</h4>
-  <p>A "scan" is what a real experiment does: prepare the state, measure every spin in the Z basis, and
-  average. Twenty shots gives you a noisy estimate of a correlator — the spread goes as σ/√shots, so
-  going from 20 to 500 shots only buys you a factor of five in precision. That trade is the whole
-  economy of quantum measurement, and now it's your ⚡ budget.</p>
-
-  <h4>Why the later stages are blurry</h4>
-  <p>Stages 2 and 3 aren't a filter. We prepare each ground state with a variational circuit, then put a
-  <b>depolarizing channel after every CNOT</b> and simulate the whole thing as a density matrix
-  (PennyLane's <code>default.mixed</code>). At p = 0.05 each gate scrambles the target 5% of the time,
-  and the correlations you're trying to read fade with every gate that's run.</p>
-
-  <div class="callout"><b>Our result, which you can feel while playing.</b> Noise attenuates the order
-  parameters almost uniformly — so if you calibrate your decision rule on clean data and then apply it
-  to noisy data, the ordered phases appear to lose 39% of their area. Recalibrate on the noisy data and
-  the borders snap right back. Noise destroys the <i>scale</i> of the order parameter, not the
-  <i>location</i> of the transition. What it really costs you is shots.</div>
-
-  <p>The fragile one is the stripes: at p = 0.05 the antiphase order parameter loses 47% against the
-  ferromagnet's 40%, because it lives on a longer-range correlator and there's simply more distance for
-  the noise to eat.</p>
-
-  <h4>Stage 4 is a trap that cost us an hour</h4>
-  <p>The stripe pattern repeats every four sites, so on a <i>ring</i> it only fits when the ring length
-  is divisible by four. Our first full noisy run used six spins; the antiphase was geometrically
-  frustrated out of existence, ⟨Z·Z⟩ at distance 2 reached only −0.33 instead of −0.99, and agreement
-  with the analytic lines collapsed from 92% to 44%. An hour of compute, thrown away — so we kept it as
-  <b>Broken ring</b>, stage 4. Play it and watch the striped region simply fail to appear. Stage 5 goes
-  the other way: twelve spins, and the borders sharpen to 95%.</p>
-
+  <h4>What a scan measures</h4>
+  <p>Each shot measures every spin in the Z basis. From that one bitstring we calculate both
+  nearest- and next-nearest-neighbour correlations, averaging over all sites. All 20, 100 or 500
+  shots contribute to both estimates. The browser draws joint outcomes from the saved quantum
+  distribution, preserving their covariance and physical bounds. More shots reduce sampling
+  uncertainty; they do not remove gate noise or preparation error.</p>
+  <h4>Why noisy stages look different</h4>
+  <p>At each grid point a variational circuit approximates the ground state. PennyLane's
+  default.mixed applies a depolarizing channel to the target after every CNOT, with p = 0.01 or 0.05.
+  Preparation is imperfect: the saved N=8 scan has mean energy error 0.149.</p>
+  <div class="callout"><b>What we measured.</b> At p = 0.05, a fixed clean classifier labels about
+  39% less area as ordered. Recalibration largely recovers that area, with small boundary changes.
+  This is a result about our classifier and finite simulation, not proof that physical transitions
+  cannot move under noise.</div>
+  <p>Two correlators classify three regions. The reference floating band is excluded from scoring;
+  it is not independently detected. Your score measures agreement with stage cluster labels.</p>
+  <h4>Why six spins make a tricky level</h4>
+  <p>A perfect period-four stripe cannot close around a six-spin ring. The resulting finite-size
+  frustration weakens its stripe signature. This does not mean the antiphase disappears in the
+  infinite model. The twelve-spin stage is clean only.</p>
   <p class="small">Full method, figures and code in the repository README. Every number above came out of
   a script you can re-run.</p>
 
@@ -800,18 +926,71 @@ function step(n){
   document.getElementById("coachN").textContent=n;
   document.getElementById("coachT").innerHTML=`<b>${STEPS[n].b}</b><span>${STEPS[n].s}</span>`;
   document.getElementById("coachDone").textContent=`step ${n} of 4`;
+  if(n===3) react('tutorial_milestone','Tutorial · two scans collected',false,true);
 }
 function stopTutorial(){ tutorial=0; document.getElementById("coach").classList.remove("show"); }
 document.getElementById("tutorial").onclick=()=>{ mode="practice"; syncMode(); newRound(); step(1); };
 
-document.getElementById("memes").onclick=e=>{ memesOn=!memesOn; e.target.textContent=memesOn?"Memes: on":"Memes: off"; };
-document.getElementById("clips").onclick=e=>{ useClips=!useClips; e.target.textContent=useClips?"Clips: on":"Clips: off"; };
+function syncMemeControls(){
+  for(const [id,label,on,key] of [['memes','Memes',memesOn,'all'],['clips','Personal memes',useClips,'personal'],['famous','Famous meme GIFs',famousOn,'famous'],['popeye','Popeyes',popeyeOn,'popeye']]){
+    const button=document.getElementById(id);
+    button.textContent=`${label}: ${on?'on':'off'}`;button.setAttribute('aria-pressed',String(on));
+    try{localStorage.setItem('ph_meme_'+key,on?'on':'off');}catch(e){}
+  }
+  document.getElementById('testMeme').disabled=!memesOn||!useClips;
+  document.getElementById('previewFamous').disabled=!memesOn||!famousOn;
+  document.getElementById('previewPopeye').disabled=!memesOn||!popeyeOn;
+  document.getElementById('memeMode').textContent=!memesOn?'Quiet mode. Learning tips remain on the results screen.':
+    useClips&&famousOn?'Mix mode: famous GIFs and your recordings alternate when both fit the moment.':
+    useClips?'Personal mode: your recordings play when available; other events use fallback cards.':
+    famousOn?'Famous mode: recognizable GIFs with quantum punchlines.':
+    popeyeOn?'Popeye mode: three original cartoon stills with thirteen captions.':'Classic mode: the original illustrated cards.';
+}
+function changeMemeSetting(){document.getElementById('cards').innerHTML='';mixedMemeCount=0;syncMemeControls();}
+document.getElementById('memes').onclick=()=>{memesOn=!memesOn;changeMemeSetting();};
+document.getElementById('clips').onclick=()=>{useClips=!useClips;changeMemeSetting();};
+document.getElementById('famous').onclick=()=>{famousOn=!famousOn;changeMemeSetting();};
 document.getElementById("testMeme").onclick=()=>{
-  const keys=Object.keys(CARDS); lastCard=0;
-  react(keys[Math.floor(Math.random()*keys.length)],"preview");
+  if(!memesOn||!useClips) return;
+  const keys=Object.keys(CLIPS),index=personalPreview++%keys.length;
+  react(keys[index],`Your recording · ${index+1} of ${keys.length}`,true);
+};
+function previewFamous(event){
+  // Explicit gallery previews also work when the automatic GIF pack is off.
+  if(!memesOn) return;
+  document.getElementById('info').classList.remove('show');
+  react(FAMOUS_REACTIONS.byEvent[event],'GIF preview',true);
+}
+document.getElementById('previewFamous').onclick=()=>{
+  if(!memesOn||!famousOn) return;
+  const events=FAMOUS_REACTIONS.previews;
+  previewFamous(events[famousPreview++%events.length]);
+  document.getElementById('previewFamous').textContent=`Preview GIF ${famousPreview%events.length+1}/${events.length}`;
+};
+document.getElementById('famousGallery').onclick=()=>{
+  document.getElementById('cards').innerHTML='';
+  document.getElementById('doc').innerHTML=FAMOUS_REACTIONS.gallery();
+  document.getElementById('info').classList.add('show');document.getElementById('info').scrollTop=0;
+  document.getElementById('closeFamousGallery').onclick=()=>document.getElementById('info').classList.remove('show');
+};
+
+document.getElementById('popeye').onclick=()=>{popeyeOn=!popeyeOn;changeMemeSetting();};
+document.getElementById("previewPopeye").onclick=()=>{
+  if(!memesOn||!popeyeOn) return;
+  const index=popeyePreview++%POPEYE_REACTIONS.ids.length;
+  react(POPEYE_REACTIONS.ids[index],`Actual cartoon frame · card ${index+1} of 13`,true);
+  document.getElementById("previewPopeye").textContent=`Preview Popeye ${popeyePreview%13+1}/13`;
+};
+
+document.getElementById("popeyeGallery").onclick=()=>{
+  document.getElementById("doc").innerHTML=POPEYE_REACTIONS.gallery();
+  document.getElementById("info").classList.add("show");
+  document.getElementById("info").scrollTop=0;
+  document.getElementById("closePopeyeGallery").onclick=()=>document.getElementById("info").classList.remove("show");
 };
 
 /* everything is defined: now load the data and start */
+syncMemeControls();
 if (window.PHASE_HUNTER_DATA) boot(window.PHASE_HUNTER_DATA);
 else fetch("dataset.json").then(r=>r.json()).then(boot)
   .catch(()=>{document.getElementById("levelNote").textContent="dataset.js missing - run scripts/make_stages.py";});

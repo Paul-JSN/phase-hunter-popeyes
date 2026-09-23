@@ -9,3 +9,6 @@ game/clips/*.mp4
 game/clips/*.mov
 game/clips/_work/
 _to_delete/
+
+# Resumable full-register recovery scratch
+.readout-checkpoints/
