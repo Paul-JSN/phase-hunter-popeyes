@@ -58,18 +58,22 @@ the human-versus-agent measurement-budget experiment is still to come.
 
 ### Reactions (the meme layer)
 
-![reaction card](figures/reaction_card.png)
+![the thirteen reaction cards](figures/meme_wall.png)
 
-Spinny, our spin-arrow mascot, reacts to what just happened. A ping that lands more than two standard
-deviations from the truth gets *"Trust me bro"* with the reading and the true value underneath; five
-cheap pings in a row gets *"20 shots is a personality"*; beating the agent gets *"I would like to
-speak to my developer"*. Thirteen cards are wired to specific game events, so a card also tells the
-player something true about the run.
+Spinny, our spin-arrow mascot, reacts to what just happened, and each card is a drawn scene rather
+than a caption on its own. A ping landing more than two standard deviations from the truth gets
+*"Trust me bro"* over a wobbling measurement, with the reading and the true value printed underneath.
+Five cheap pings in a row gets a two-panel *"20 shots is a personality"*. A ping inside the floating
+band gets Spinny drifting on a balloon between the two boundary lines. Beating the agent gets the
+sunglasses; losing to it gets the robot holding the trophy. Revealing your map also prints a result
+panel worth screenshotting.
 
-Everything is original: the mascot is drawn as inline SVG in `game/index.html`, and the captions are
-ours. We ship no copyrighted meme images or photographs, and no real person's likeness. Cards appear
-one at a time, are dismissible, auto-hide after four seconds, honour `prefers-reduced-motion`, and can
-be switched off with the **Memes** toggle.
+All thirteen cards fire on real game state, so the joke doubles as feedback about the run.
+
+**Everything is original art.** The mascot, the props and the captions are ours, drawn as inline SVG
+in `game/memes.js`. We ship no copyrighted meme images, no photographs, and no real person's likeness
+— which matters for a public repo. Cards appear one at a time, are dismissible, auto-hide after four
+seconds, honour `prefers-reduced-motion`, and can be switched off with the **Memes** toggle.
 
 ---
 
@@ -126,6 +130,7 @@ scripts/make_dataset.py    grid scan -> data/ + game/dataset.js
 scripts/make_figures.py    figures/
 scripts/run_pennylane.py   cross-check and noise pilot
 game/index.html            playable prototype (no build step)
+game/memes.js              original mascot art and the thirteen reaction cards
 docs/Phase_Hunter_Plan.pdf full project plan: game design, levels, experiment, schedule
 ```
 
