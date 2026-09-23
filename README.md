@@ -22,7 +22,7 @@ repository.
 | Phase diagram, p = 0 | [`figures/clean_phase_diagram.png`](figures/clean_phase_diagram.png) | Done |
 | Phase diagrams, p = 0.01 and p = 0.05 | [`figures/phase_diagrams_noise.png`](figures/phase_diagrams_noise.png) | Done |
 | Writeup, 2–3 pages | [`docs/Phase_Hunter_Writeup.pdf`](docs/Phase_Hunter_Writeup.pdf) | Done |
-| Presentation video | — | Not recorded yet |
+| Presentation video | _link goes here once recorded_ | Not recorded yet |
 
 **Headline result.** Read with a decision rule calibrated on clean data, the ordered phases lose
 **39% of their area** by p = 0.05. Re-fit that rule on the noisy data and they do not move at
@@ -206,7 +206,7 @@ never out of date with the code.
 |---|---|
 | Presentation video | Not recorded. |
 | Floating phase detection | Not attempted. The handout calls it very hard at small N; those cells are excluded from scoring and we say so rather than claiming otherwise. |
-| N ≥ 12 under noise | Clean only. The noisy scan is N = 8; N = 12 exact is a game stage. |
+| N ≥ 12 under noise | The full scan is N = 8. `scripts/large_n_cut.py` runs two vertical cuts at N = 12 — one through each ordered phase — to test whether the scale-not-location result survives a larger ring, which is what a full scan at that size would cost hours to say. |
 | Trotterised dynamics | Not attempted. Everything here is ground-state physics. |
 
 ### Two honesty notes
@@ -215,11 +215,15 @@ never out of date with the code.
    PennyLane scan plus exact ground states at N = 6 and N = 12, with shot noise drawn from the exact
    per-shot standard deviations. The placeholder model in `src/noise_preview.py` survives only as an
    unused fallback and is labelled `preview_*` wherever it could appear.
-2. **The current figures come from the numpy path**, `src/annni.py`. It builds and diagonalises the
-   same dense Hamiltonian the starter kit's own `exact_diag.py` builds with numpy and
-   `numpy.linalg.eigh`. `src/pennylane_pipeline.py` constructs the same Hamiltonian with
-   `qml.dot`, and `scripts/run_pennylane.py --check` compares the two matrices element by element.
-   The final submitted diagrams will come from the PennyLane path.
+2. **Which library produced which figure.** Everything involving noise — the p = 0.01 and p = 0.05
+   diagrams, the noise analysis, the error mitigation — comes from PennyLane: a variational circuit
+   fitted on `default.qubit` and executed on `default.mixed` with `qml.DepolarizingChannel` after
+   every CNOT (`src/pennylane_pipeline.py`, run by `scripts/run_pennylane.py --scan`). The clean
+   ground states can be produced by either path from the same Hamiltonian:
+   `scripts/make_dataset.py --backend pennylane` takes them through `qml.dot` and `qml.matrix`, and
+   the default numpy backend diagonalises the identical dense matrix the starter kit's own
+   `exact_diag.py` builds. `scripts/run_pennylane.py --check` compares the two matrices element by
+   element, and the PennyLane backend reports how far the two sets of observables differ.
 
 ## How to run
 
@@ -257,6 +261,13 @@ The noisy scan itself needs PennyLane and about an hour; its output is committed
 uv venv --python 3.14 && uv pip install "pennylane==0.44.1" numpy matplotlib
 uv run python scripts/run_pennylane.py --check          # Hamiltonian vs the numpy reference
 uv run python scripts/run_pennylane.py --scan --qubits 8 --grid 24
+
+# the clean diagram through PennyLane rather than numpy, cross-checked point by point
+uv run python scripts/make_dataset.py --qubits 8 --grid 40 --backend pennylane
+
+# does the result survive a bigger ring? two cuts at N = 12
+uv run python scripts/large_n_cut.py --qubits 12
+python3 scripts/large_n_cut.py --analyse-only    # re-draw without re-running
 ```
 
 ## Repository layout
@@ -275,6 +286,7 @@ scripts/make_stages.py     builds the five game stages (8/6/12 spins, three nois
 scripts/analyse_noise.py   phase diagrams under noise + the noise analysis
 scripts/budget_study.py    how many measurements a boundary costs, by strategy
 scripts/second_method.py   fidelity susceptibility + zero-noise extrapolation
+scripts/large_n_cut.py     two noisy cuts at N = 12, where a full scan is out of reach
 scripts/make_writeup.py    renders docs/Phase_Hunter_Writeup.pdf from the result JSON
 phase_hunter.ipynb         the submission notebook: every result, executed
 game/index.html            playable prototype (no build step)

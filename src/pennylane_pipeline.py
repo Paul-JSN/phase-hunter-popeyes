@@ -1,14 +1,16 @@
 """PennyLane path: Hamiltonian, exact cross-check, and the noisy pipeline.
 
-This is the code that produces the submitted phase diagrams.  It needs the
-Scientific Track environment (PennyLane 0.44.1):
+This is the code that produced the submitted noisy phase diagrams.  It needs
+the Scientific Track environment (PennyLane 0.44.1):
 
     uv sync --project "Scientific Track"
     uv run --project "Scientific Track" python scripts/run_pennylane.py --check
+    uv run --project "Scientific Track" python scripts/run_pennylane.py --scan --qubits 8 --grid 24
 
-Nothing in this file has been executed in the environment that generated the
-current figures (PyPI was unreachable there), so treat it as untested code
-until `scripts/run_pennylane.py --check` passes.
+`--check` compares this Hamiltonian with the numpy reference in src/annni.py
+element by element and passes.  `--scan` is the 58-minute run whose output is
+committed as data/pennylane_scan_N8.npz; every figure and number that mentions
+noise comes from it.
 """
 from __future__ import annotations
 
@@ -100,7 +102,7 @@ def vqe_ground_state(n_qubits: int, kappa: float, h: float, layers: int = 4,
     return params, float(cost(params))
 
 
-def noisy_correlators(params, n_qubits: int, noise: float, layers: int = 3):
+def noisy_correlators(params, n_qubits: int, noise: float, layers: int = 4):
     """<ZZ> at distance 1 and 2 with depolarizing noise after every CNOT."""
     device = qml.device("default.mixed", wires=n_qubits)
     nn, nnn = correlator_observables(n_qubits)
