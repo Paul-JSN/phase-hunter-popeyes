@@ -75,6 +75,20 @@
   .dot{width:30px;height:30px;flex:0 0 30px;border-radius:50%;border:2px solid rgba(255,255,255,.85);
        display:grid;place-items:center}
   .dot i{width:11px;height:11px;border-radius:50%;display:block}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .modes button{background:#0f1c2e;border:1px solid var(--edge);border-radius:12px;padding:10px 6px;
+                color:var(--ink);font:inherit;cursor:pointer;text-align:center}
+  .modes button b{display:block;font-size:14px;font-weight:600}
+  .modes button span{display:block;font-size:10.5px;color:var(--muted)}
+  .modes button.active{background:linear-gradient(160deg,#1c5a52,#123c3a);border-color:var(--teal)}
+  #coach{display:none;margin-top:12px;background:linear-gradient(120deg,#16304a,#122740);
+         border:1px solid #2f5a7a;border-radius:16px;padding:13px 16px;align-items:center;gap:14px}
+  #coach.show{display:flex}
+  #coach .n{width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:var(--teal);color:#06231f;
+            display:grid;place-items:center;font-weight:700}
+  #coach .t b{display:block;font-size:14.5px}
+  #coach .t span{display:block;font-size:12.5px;color:#A9C4D8;margin-top:2px}
+  #coach .done{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap}
   .legend{display:grid;gap:7px;font-size:12.5px;color:var(--muted)}
   .legend i{width:12px;height:12px;border-radius:4px;display:inline-block;margin-right:7px;vertical-align:-1px}
   .note{font-size:11.5px;color:var(--muted);line-height:1.45}
@@ -180,6 +194,8 @@
     <section class="stage">
       <canvas id="board" width="720" height="560"></canvas>
       <div class="hint" id="hint">Tap the fog to scan · drag the orange line to call the border</div>
+      <div id="coach"><div class="n" id="coachN">1</div><div class="t" id="coachT"></div>
+        <div class="done" id="coachDone"></div></div>
       <div class="axis-note">
         <span>← calm &nbsp;·&nbsp; <b>frustration</b> (κ) &nbsp;·&nbsp; chaotic →</span>
         <span id="levelNote"></span>
@@ -195,12 +211,22 @@
       </div>
 
       <div class="card">
+        <h2>Mode</h2>
+        <div class="modes" id="modes">
+          <button data-mode="practice"><b>Practice</b><span>labels + hints</span></button>
+          <button data-mode="hunter"><b>Hunter</b><span>no help</span></button>
+        </div>
+        <button class="btn ghost" id="tutorial">Start the tutorial</button>
+      </div>
+
+      <div class="card">
         <h2>Your call</h2>
         <button class="btn" id="reveal">Reveal &amp; score</button>
         <div class="row">
           <button class="btn ghost" id="agent">Send the AI</button>
           <button class="btn ghost" id="reset">Restart</button>
         </div>
+        <button class="btn ghost" id="template" style="display:none">Start me with a V</button>
         <div class="note" id="agentNote" style="margin-top:9px">Drag the orange handles so the line
           splits the ordered regions from the chaotic one, then reveal.</div>
       </div>
@@ -270,13 +296,30 @@ let data=null, level=0, shots=100, energy=60, pings=[], revealed=false, drag=nul
 let handlesA=[{k:0.0,h:1.3},{k:0.17,h:1.2},{k:0.34,h:1.1},{k:0.5,h:1.0}];
 let handlesB=[{k:0.5,h:1.0},{k:0.67,h:1.1},{k:0.84,h:1.2},{k:1.0,h:1.3}];
 let best = Number(localStorage.getItem("ph_best")||0) || null;
+let mode = localStorage.getItem("ph_mode") || "practice";   // practice | hunter
+let tutorial = 0;                                           // 0 = off, 1..4 = step
+
+/* A scan's verdict, in words. The thresholds are the same ones the baseline
+   agent bisects on, so practice mode is showing you its reasoning.          */
+function verdict(r){
+  const strong = r.k<0.5 ? r.zz1 : -r.zz2;
+  if(strong>0.62) return {t:"ORDER", c:"#34C2B0"};
+  if(strong<0.30) return {t:"CHAOS", c:"#E08B45"};
+  return {t:"EDGE?", c:"#EBC15A"};
+}
+/* Does the player's line disagree with what this scan said? */
+function contradicts(r){
+  const v=verdict(r); if(v.t==="EDGE?") return false;
+  const below = r.h < (r.k<0.5 ? curveAt(handlesA,r.k) : curveAt(handlesB,r.k));
+  return (v.t==="ORDER") !== below;
+}
 
 const px = k => PAD.l + k*(canvas.width-PAD.l-PAD.r);
 const py = h => canvas.height-PAD.b - (h/2)*(canvas.height-PAD.t-PAD.b);
 const toK = x => (x-PAD.l)/(canvas.width-PAD.l-PAD.r);
 const toH = y => 2*(canvas.height-PAD.b-y)/(canvas.height-PAD.t-PAD.b);
 
-function boot(d){ data=d; buildUI(); draw(); if(best) document.getElementById("best").textContent=best.toFixed(0)+"%"; }
+function boot(d){ data=d; buildUI(); syncMode(); energy = mode==="practice" ? 90 : 60; hud(); draw(); if(best) document.getElementById("best").textContent=best.toFixed(0)+"%"; }
 if (window.PHASE_HUNTER_DATA) boot(window.PHASE_HUNTER_DATA);
 else fetch("dataset.json").then(r=>r.json()).then(boot)
   .catch(()=>{document.getElementById("levelNote").textContent="dataset.js missing - run scripts/make_dataset.py";});
@@ -312,7 +355,7 @@ function syncButtons(){
 }
 function hud(){
   document.getElementById("energy").textContent=energy;
-  document.getElementById("energyBar").style.width=Math.max(0,energy/60*100)+"%";
+  document.getElementById("energyBar").style.width=Math.max(0,energy/(mode==="practice"?90:60)*100)+"%";
   document.getElementById("pings").textContent=pings.length;
 }
 function nearestIndex(arr,v){let b=0,bd=1e9;arr.forEach((a,i)=>{const d=Math.abs(a-v);if(d<bd){bd=d;b=i;}});return b;}
@@ -357,6 +400,8 @@ function ping(k,h,cost=true){
     else if(shots===500) react("big_spend","4 energy for one sharp reading");
     else if(shots===20 && ++cheapPings===5) react("cheap_habit","five weak scans and counting");
     if(energy<COST[20]) react("broke",`${pings.length} scans spent`);
+    if(tutorial===1 && r.h<0.6) step(2);
+    else if(tutorial===2 && r.h>1.1) step(3);
   }
   hud(); return r;
 }
@@ -397,9 +442,21 @@ function draw(){
   pings.forEach(p=>{
     const x=px(p.k), y=py(p.h);
     ctx.beginPath(); ctx.arc(x,y,20,0,7); ctx.fillStyle="rgba(255,255,255,.06)"; ctx.fill();
+    if(mode==="practice" && !revealed && contradicts(p)){        // your line argues with this scan
+      ctx.beginPath(); ctx.arc(x,y,17,0,7);
+      ctx.strokeStyle="#D45B4A"; ctx.lineWidth=2.4; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+    }
     ctx.beginPath(); ctx.arc(x,y,11,0,7); ctx.fillStyle=viridis(clamp01(p.zz1)); ctx.fill();
     ctx.strokeStyle="rgba(255,255,255,.85)"; ctx.lineWidth=1.6; ctx.stroke();
     ctx.beginPath(); ctx.arc(x,y,4.6,0,7); ctx.fillStyle=diverging(clamp01(0.5+0.5*p.zz2)); ctx.fill();
+    if(mode==="practice" && !revealed){
+      const v=verdict(p);
+      ctx.font="600 11px Outfit,system-ui"; ctx.textAlign="center";
+      ctx.fillStyle="rgba(7,14,26,.8)";
+      const w=ctx.measureText(v.t).width+10;
+      ctx.fillRect(x-w/2, y+15, w, 15);
+      ctx.fillStyle=v.c; ctx.fillText(v.t, x, y+26); ctx.textAlign="left";
+    }
   });
   [handlesA,handlesB].forEach(hs=>{
     ctx.beginPath(); hs.forEach((p,i)=> i?ctx.lineTo(px(p.k),py(p.h)):ctx.moveTo(px(p.k),py(p.h)));
@@ -433,7 +490,10 @@ canvas.addEventListener("pointermove",e=>{
   const r=canvas.getBoundingClientRect();
   drag.h=Math.max(0,Math.min(2,toH((e.clientY-r.top)*canvas.height/r.height))); draw();
 });
-window.addEventListener("pointerup",()=>{drag=null;});
+window.addEventListener("pointerup",()=>{
+  if(drag && tutorial===3) step(4);
+  drag=null;
+});
 
 function stars(s){ return s>=.95?"★★★":s>=.88?"★★☆":s>=.75?"★☆☆":"☆☆☆"; }
 function showResult(id, s){
@@ -450,7 +510,7 @@ function showResult(id, s){
     </div>
     <div class="chips">
       <span class="chip">scans <b>${pings.length}</b></span>
-      <span class="chip">energy <b>${60-energy}</b></span>
+      <span class="chip">energy <b>${(mode==="practice"?90:60)-energy}</b></span>
       ${agentScore!==null?`<span class="chip">AI <b>${(agentScore*100).toFixed(1)}%</b></span>`:""}
       ${best?`<span class="chip">best <b>${best.toFixed(1)}%</b></span>`:""}
     </div>
@@ -470,6 +530,7 @@ function showResult(id, s){
 function hideResult(){ document.getElementById("result").classList.remove("show"); }
 
 document.getElementById("reveal").onclick=()=>{
+  if(tutorial) stopTutorial();
   revealed=true; draw();
   const s=score();
   if(!best||s*100>best){ best=s*100; localStorage.setItem("ph_best",best); }
@@ -481,7 +542,7 @@ document.getElementById("reveal").onclick=()=>{
 };
 document.getElementById("reset").onclick=()=>{hideResult(); reset();};
 function reset(){
-  energy=60; pings=[]; revealed=false; cheapPings=0; agentScore=null;
+  energy = mode==="practice" ? 90 : 60; pings=[]; revealed=false; cheapPings=0; agentScore=null;
   document.getElementById("agentNote").textContent =
     "Drag the orange handles so the line splits the ordered regions from the chaotic one, then reveal.";
   hud(); draw();
@@ -584,6 +645,11 @@ const HOW_TO_PLAY = `
   classic is scanning only where it's obvious: the middle of a phase tells you nothing you didn't
   already know. Spend where you think the border is.</p>
 
+  <div class="callout"><b>New here?</b> Switch to <b>Practice</b> in the sidebar and press
+  <b>Start the tutorial</b>. Practice labels every scan ORDER, CHAOS or EDGE?, rings any scan your line
+  disagrees with, hands you a rough V to start from, and gives you ⚡90 instead of ⚡60. Hunter mode
+  takes all of that away.</div>
+
   <div class="callout"><b>One honest caveat.</b> A thin drifting sliver (the floating phase) exists on the
   right-hand side, and we don't ask you to draw it — it's too narrow to resolve at this size, so those
   squares are left out of your score. Real physicists have the same problem.</div>
@@ -675,6 +741,44 @@ try{
   if(!localStorage.getItem("ph_seen_rules")){ openDoc("how"); localStorage.setItem("ph_seen_rules","1"); }
 }catch(e){}
 
+function syncMode(){
+  [...document.getElementById("modes").children].forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
+  document.getElementById("template").style.display = mode==="practice" ? "block" : "none";
+  try{ localStorage.setItem("ph_mode",mode); }catch(e){}
+  draw();
+}
+document.getElementById("modes").onclick=e=>{
+  const b=e.target.closest("button[data-mode]"); if(!b) return;
+  mode=b.dataset.mode; if(mode==="hunter") stopTutorial(); syncMode();
+};
+/* the V, roughly - deliberately loose so there is still work to do */
+document.getElementById("template").onclick=()=>{
+  handlesA=[{k:0,h:1.15},{k:0.17,h:0.85},{k:0.34,h:0.5},{k:0.5,h:0.15}];
+  handlesB=[{k:0.5,h:0.15},{k:0.67,h:0.45},{k:0.84,h:0.65},{k:1,h:0.85}];
+  draw(); step(3);
+};
+
+const STEPS = [
+  null,
+  {b:"Take a scan low on the left", s:"Click around κ = 0.15, h = 0.3. Deep in the ordered region the disc goes bright."},
+  {b:"Now scan straight above it", s:"Same κ, but up near h = 1.5. Watch the label change from ORDER to CHAOS - the border is somewhere between."},
+  {b:"Drag the line to match your scans", s:"Any scan your line disagrees with gets a red dashed ring. Clear the rings."},
+  {b:"Reveal when the rings are gone", s:"The true map appears and you get scored. Then try p = 0.05 and watch it get harder."}
+];
+function step(n){
+  if(!tutorial && n!==1) return;
+  tutorial=n;
+  const bar=document.getElementById("coach");
+  if(n>STEPS.length-1 || n===0){ stopTutorial(); return; }
+  bar.classList.add("show");
+  document.getElementById("coachN").textContent=n;
+  document.getElementById("coachT").innerHTML=`<b>${STEPS[n].b}</b><span>${STEPS[n].s}</span>`;
+  document.getElementById("coachDone").textContent=`step ${n} of 4`;
+}
+function stopTutorial(){ tutorial=0; document.getElementById("coach").classList.remove("show"); }
+document.getElementById("tutorial").onclick=()=>{
+  mode="practice"; syncMode(); reset(); step(1);
+};
 document.getElementById("testMeme").onclick=()=>{
   const keys=Object.keys(CARDS); lastCard=0;
   react(keys[Math.floor(Math.random()*keys.length)],"preview");
