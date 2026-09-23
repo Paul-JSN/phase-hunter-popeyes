@@ -1,6 +1,7 @@
 # Phase Hunter
 
-**Team Popeyes (solo): Tanish Singh Rajpal**
+**Team Popeyes (Lead): Tanish Singh Rajpal**
+Member: Paul Jeon
 
 Q-SITE 2026 · Quantum Coalition Scientific Track
 
