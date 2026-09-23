@@ -1,8 +1,10 @@
-"""Scan the (kappa, h) plane, classify the phases, and export the game dataset.
+"""Scan the (kappa, h) plane with exact ground states and classify the phases.
 
     python3 scripts/make_dataset.py --qubits 8 --grid 40
 
-Writes data/grid_N{n}.npz, data/game_dataset.json and the clean-diagram figures.
+Writes data/grid_N{n}.npz and data/summary.json, which scripts/make_figures.py
+turns into the clean-diagram figures. The game's own dataset is built by
+scripts/make_stages.py - this script does not touch it.
 """
 from __future__ import annotations
 
@@ -19,7 +21,6 @@ sys.path.insert(0, str(ROOT))
 
 from src.annni import AnnniChain
 from src.classify import accuracy, classify
-from src.noise_preview import apply as apply_noise_preview
 from src.reference import FLOATING, reference_labels
 
 
@@ -27,9 +28,6 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--qubits", type=int, default=8)
     parser.add_argument("--grid", type=int, default=40)
-    parser.add_argument("--preview-noise", type=float, nargs="*", default=[0.01, 0.05])
-    parser.add_argument("--scan", type=str, default=None,
-                        help="a PennyLane scan .npz; its real noise levels replace the placeholder")
     arguments = parser.parse_args()
 
     kappas = np.linspace(0.0, 1.0, arguments.grid)
@@ -48,46 +46,6 @@ def main() -> None:
     (ROOT / "data").mkdir(exist_ok=True)
     np.savez_compressed(ROOT / f"data/grid_N{arguments.qubits}.npz", kappas=kappas, hs=hs,
                         reference=reference, predicted=predicted, **grid)
-
-    if arguments.scan:
-        # real noisy simulation: rebuild the grid on the scan's own axes
-        scan = np.load(ROOT / arguments.scan)
-        kappas, hs = scan["kappas"], scan["hs"]
-        grid = chain.grid(kappas, hs)                       # exact values, for the shot-noise widths
-        kappa_grid, h_grid = np.meshgrid(kappas, hs)
-        reference = reference_labels(kappa_grid, h_grid)
-        predicted = classify(grid["zz1"], grid["zz2"], kappas, hs)
-        scores = accuracy(predicted, reference)
-        levels = [{"name": "clean" if p == 0 else f"p{p}", "p": float(p),
-                   "zz1": scan[f"p{p}_zz1"], "zz2": scan[f"p{p}_zz2"], "placeholder": False}
-                  for p in [float(x) for x in scan["noise"]]]
-    else:
-        levels = [{"name": "clean", "p": 0.0, "zz1": grid["zz1"], "zz2": grid["zz2"], "placeholder": False}]
-        for p in arguments.preview_noise:
-            zz1, zz2, q = apply_noise_preview(grid["zz1"], grid["zz2"], p)
-            levels.append({"name": f"preview_p{p}", "p": p, "zz1": zz1, "zz2": zz2,
-                           "placeholder": True, "effective_q": q})
-
-    dataset = {
-        "note": ("Levels come from the PennyLane scan: a VQE state-preparation circuit with a "
-                 "depolarizing channel after every CNOT, simulated on default.mixed. Shot-noise "
-                 "widths are the exact per-shot standard deviations. Any level named preview_* is a "
-                 "placeholder model instead and must not be reported as a noise result."),
-        "qubits": arguments.qubits,
-        "kappas": kappas.tolist(),
-        "hs": hs.tolist(),
-        "reference": reference.tolist(),
-        "sd1": np.round(grid["sd1"], 4).tolist(),
-        "sd2": np.round(grid["sd2"], 4).tolist(),
-        "levels": [{"name": level["name"], "p": level["p"], "placeholder": level["placeholder"],
-                    "zz1": np.round(level["zz1"], 4).tolist(),
-                    "zz2": np.round(level["zz2"], 4).tolist()} for level in levels],
-    }
-    (ROOT / "game").mkdir(exist_ok=True)
-    payload = json.dumps(dataset)
-    (ROOT / "game/dataset.json").write_text(payload)
-    # dataset.js lets index.html open straight from disk (file:// blocks fetch)
-    (ROOT / "game/dataset.js").write_text("window.PHASE_HUNTER_DATA = " + payload + ";\n")
 
     summary = {
         "qubits": arguments.qubits,

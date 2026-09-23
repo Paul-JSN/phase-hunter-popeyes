@@ -35,7 +35,7 @@ transition — what it really costs you is shots.
 
 ![clean phase diagram](figures/clean_phase_diagram.png)
 
-1600 ground states on a 40 × 40 grid over κ ∈ [0, 1], h ∈ [0, 2], solved in about **12 s**. Phases are
+1600 ground states on a 40 × 40 grid over κ ∈ [0, 1], h ∈ [0, 2], solved in about **9 s**. Phases are
 assigned by unsupervised clustering of two measured correlators, ⟨Z_i Z_{i+1}⟩ and ⟨Z_i Z_{i+2}⟩,
 with the three cluster centres seeded at three corners of the plane whose phase is not in doubt. The
 reference labels come from the analytic transition lines in the challenge handout.
@@ -187,18 +187,37 @@ never out of date with the code.
 
 ## How to run
 
+Only numpy and matplotlib are needed for everything except the noisy simulation.
+
 ```bash
-# numpy path: scan the grid, classify, export the game dataset, render figures
+# the notebook: every result, top to bottom
+jupyter lab phase_hunter.ipynb
+
+# clean phase diagram (exact ground states, ~9 s)
 python3 scripts/make_dataset.py --qubits 8 --grid 40
 python3 scripts/make_figures.py
 
-# the game: just open the file
+# noisy diagrams and the noise analysis, from the committed scan
+python3 scripts/analyse_noise.py --qubits 8
+
+# how many measurements a boundary costs (~8 s)
+python3 scripts/budget_study.py
+
+# rebuild the five game stages, then play
+python3 scripts/make_stages.py
 open game/index.html
 
-# PennyLane path (needs the Scientific Track environment)
-uv sync --project "Scientific Track"
-uv run --project "Scientific Track" python scripts/run_pennylane.py --check
-uv run --project "Scientific Track" python scripts/run_pennylane.py --noise-pilot
+# regenerate the writeup PDF from the result JSON
+python3 scripts/make_writeup.py
+```
+
+The noisy scan itself needs PennyLane and about an hour; its output is committed as
+`data/pennylane_scan_N8.npz`, so nothing above depends on re-running it.
+
+```bash
+uv venv --python 3.14 && uv pip install "pennylane==0.44.1" numpy matplotlib
+uv run python scripts/run_pennylane.py --check          # Hamiltonian vs the numpy reference
+uv run python scripts/run_pennylane.py --scan --qubits 8 --grid 24
 ```
 
 ## Repository layout
@@ -207,9 +226,9 @@ uv run --project "Scientific Track" python scripts/run_pennylane.py --noise-pilo
 src/annni.py               exact ground states, correlators, per-shot standard deviations
 src/reference.py           analytic boundaries and reference labels
 src/classify.py            unsupervised phase classification + accuracy
-src/noise_preview.py       PLACEHOLDER noise stand-in (clearly marked, not a result)
+src/noise_preview.py       unused placeholder noise stand-in, kept only as a fallback
 src/pennylane_pipeline.py  PennyLane Hamiltonian, VQE ansatz, noisy correlators on default.mixed
-scripts/make_dataset.py    grid scan -> data/ + game/dataset.js
+scripts/make_dataset.py    exact grid scan -> data/grid_N8.npz + data/summary.json
 scripts/make_figures.py    figures/
 scripts/run_pennylane.py   cross-check and noise pilot
 scripts/make_gifs.py       records figures/gameplay.gif and figures/memes.gif from the live game
@@ -220,7 +239,8 @@ scripts/make_writeup.py    renders docs/Phase_Hunter_Writeup.pdf from the result
 phase_hunter.ipynb         the submission notebook: every result, executed
 game/index.html            playable prototype (no build step)
 game/memes.js              original mascot art and the thirteen reaction cards
-docs/Phase_Hunter_Plan.pdf full project plan: game design, levels, experiment, schedule
+docs/Phase_Hunter_Writeup.pdf  the submission writeup, generated from data/*.json
+docs/Phase_Hunter_Plan.pdf     the original proposal, kept for history - superseded by this README
 ```
 
 ## The model
