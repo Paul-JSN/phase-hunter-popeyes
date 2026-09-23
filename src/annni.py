@@ -37,8 +37,26 @@ class AnnniChain:
         return np.diag(diag) - h * self.xsum
 
     def ground_state(self, kappa: float, h: float) -> tuple[np.ndarray, float]:
+        if self.n >= 10:                      # dense eigh gets expensive; Lanczos does not
+            return self._ground_state_sparse(kappa, h)
         values, vectors = np.linalg.eigh(self.hamiltonian(kappa, h))
         return vectors[:, 0], float(values[0])
+
+    def _ground_state_sparse(self, kappa: float, h: float) -> tuple[np.ndarray, float]:
+        import scipy.sparse as sp
+        import scipy.sparse.linalg as sla
+
+        index = np.arange(self.dim)
+        diagonal = (-np.sum(self.z * np.roll(self.z, -1, axis=1), axis=1)
+                    + kappa * np.sum(self.z * np.roll(self.z, -2, axis=1), axis=1))
+        matrix = sp.diags(diagonal).tocsr()
+        if h:
+            for site in range(self.n):
+                flipped = index ^ (1 << site)
+                matrix = matrix + sp.csr_matrix((-h * np.ones(self.dim), (index, flipped)),
+                                                shape=(self.dim, self.dim))
+        values, vectors = sla.eigsh(matrix, k=1, which="SA", maxiter=8000)
+        return np.asarray(vectors[:, 0]), float(values[0])
 
     def measure(self, state: np.ndarray) -> dict[str, float]:
         """Exact expectation values and per-shot standard deviations.
