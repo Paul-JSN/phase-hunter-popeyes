@@ -4,368 +4,421 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Phase Hunter</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0B1424; --panel:#132339; --ink:#E8F0F4; --muted:#93A9BD; --line:#243a52;
-    --teal:#2FB3A3; --orange:#E08B45; --purple:#9B7BD4; --blue:#5C9BD1; --edge:#24384f;
+    --bg:#070E1A; --panel:#111F33; --panel2:#16283F; --edge:#24384f;
+    --ink:#EDF4F8; --muted:#8FA6BA;
+    --teal:#34C2B0; --orange:#E08B45; --purple:#9B7BD4; --blue:#5C9BD1; --gold:#EBC15A;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-  header{padding:14px 18px;border-bottom:1px solid var(--edge);display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
-  h1{font-size:17px;margin:0;letter-spacing:.02em}
-  .tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em}
-  main{display:flex;gap:18px;padding:18px;flex-wrap:wrap;align-items:flex-start}
-  #board{background:#08101d;border:1px solid var(--edge);border-radius:10px;touch-action:none;cursor:crosshair}
-  aside{width:290px;min-width:250px;flex:1}
-  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px 14px;margin-bottom:12px}
-  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
-  .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-  button{border:0;border-radius:7px;color:var(--ink);padding:7px 11px;font:inherit;cursor:pointer;background:#1d3350}
-  button:hover{background:#274364}
-  button.active{background:var(--teal);color:#06231f;font-weight:600}
-  button.primary{background:var(--orange);color:#2b1704;font-weight:600}
-  .stat{display:flex;justify-content:space-between;border-bottom:1px solid var(--edge);padding:4px 0}
-  .stat:last-child{border:0}
-  .stat b{font-variant-numeric:tabular-nums}
-  .legend span{display:inline-flex;align-items:center;gap:6px;margin-right:10px;font-size:12px;color:var(--muted)}
-  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 700px at 20% -10%,#15304d 0%,var(--bg) 60%);
+       color:var(--ink);font:15px/1.5 Outfit,system-ui,-apple-system,"Segoe UI",sans-serif;overflow-x:hidden}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 20px 40px}
+
+  /* ---------- top bar ---------- */
+  header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:16px}
+  .logo{display:flex;align-items:center;gap:11px}
+  .logo h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.3px}
+  .logo small{display:block;font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+  .hud{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .pill{background:var(--panel);border:1px solid var(--edge);border-radius:999px;padding:8px 15px;
+        display:flex;align-items:center;gap:9px;font-size:13px}
+  .pill b{font-size:17px;font-variant-numeric:tabular-nums}
+  .bar{width:104px;height:8px;border-radius:99px;background:#0d1a2b;overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));transition:width .3s}
+
+  /* ---------- levels ---------- */
+  .levels{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .lvl{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:10px 16px;
+       cursor:pointer;text-align:left;color:var(--ink);font:inherit;min-width:150px;transition:.15s}
+  .lvl:hover{transform:translateY(-2px);border-color:#31597f}
+  .lvl b{display:block;font-size:15px;font-weight:600}
+  .lvl span{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+  .lvl.active{background:linear-gradient(160deg,#1c5a52,#123c3a);border-color:var(--teal)}
+  .lvl.active span{color:#bfe9e2}
+
+  /* ---------- layout ---------- */
+  main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+  .stage{position:relative;background:var(--panel);border:1px solid var(--edge);border-radius:20px;
+         padding:14px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+  canvas{width:100%;height:auto;display:block;border-radius:14px;background:#050B15;touch-action:none;cursor:crosshair}
+  .hint{position:absolute;left:50%;transform:translateX(-50%);bottom:56px;font-size:12.5px;color:#BCD3E4;
+        background:rgba(7,14,26,.85);padding:8px 14px;border-radius:999px;pointer-events:none;
+        transition:opacity .4s;border:1px solid var(--edge)}
+  .hint.gone{opacity:0}
+  .axis-note{display:flex;justify-content:space-between;color:var(--muted);font-size:11.5px;padding:8px 6px 0}
+
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:18px;padding:15px;margin-bottom:14px}
+  .card h2{margin:0 0 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .seg button{background:#0f1c2e;border:1px solid var(--edge);border-radius:12px;padding:10px 4px;color:var(--ink);
+              font:inherit;cursor:pointer;text-align:center;transition:.15s}
+  .seg button b{display:block;font-size:15px;font-weight:600}
+  .seg button span{display:block;font-size:10.5px;color:var(--muted)}
+  .seg button.active{background:linear-gradient(160deg,#1c5a52,#123c3a);border-color:var(--teal)}
+  .seg button:hover{transform:translateY(-1px)}
+  .btn{display:block;width:100%;margin-top:9px;padding:13px;border:0;border-radius:13px;font:inherit;
+       font-weight:600;font-size:15px;cursor:pointer;color:#08131f;
+       background:linear-gradient(160deg,var(--gold),var(--orange));transition:.15s}
+  .btn:hover{filter:brightness(1.07);transform:translateY(-1px)}
+  .btn.ghost{background:#16273d;color:var(--ink);border:1px solid var(--edge);font-weight:400}
+  .row{display:flex;gap:8px}.row .btn{margin-top:9px}
+  .legend{display:grid;gap:7px;font-size:12.5px;color:var(--muted)}
+  .legend i{width:12px;height:12px;border-radius:4px;display:inline-block;margin-right:7px;vertical-align:-1px}
   .note{font-size:11.5px;color:var(--muted);line-height:1.45}
-  .big{font-size:26px;font-weight:700}
-  /* meme reaction cards */
-  #cards{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:10px;z-index:40;align-items:flex-end}
-  .rc{display:flex;gap:12px;align-items:center;background:#16283f;border:1px solid #2c4661;border-left:4px solid var(--orange);
-      border-radius:12px;padding:11px 14px;max-width:380px;box-shadow:0 12px 28px rgba(0,0,0,.45);cursor:pointer;
-      animation:pop .22s ease-out; transition:opacity .25s, transform .25s}
-  .rc .art{width:110px;height:81px;flex:0 0 110px;border-radius:9px;overflow:hidden;background:#16283F}
-  .rc.out{opacity:0;transform:translateX(18px)}
-  .rc .txt b{display:block;font-size:14px;line-height:1.3}
-  .rc .txt span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
-  @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
-  /* scene animation - CSS only, so the art stays vector-sharp and weighs nothing */
-  .ph-ring{transform-origin:60px 58px;animation:ping 2.2s ease-out infinite}
-  .ph-r2{animation-delay:.35s} .ph-r3{animation-delay:.7s}
-  @keyframes ping{0%{transform:scale(.45);opacity:.9}70%{opacity:.15}100%{transform:scale(1.15);opacity:0}}
-  .ph-wobble{animation:wobble 1.5s ease-in-out infinite}
-  @keyframes wobble{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-  .ph-drift{animation:drift 7s ease-in-out infinite}
-  .ph-slow{animation-duration:11s;animation-direction:reverse}
-  @keyframes drift{0%,100%{transform:translateX(-12px)}50%{transform:translateX(12px)}}
-  .ph-bob{animation:bob 2.6s ease-in-out infinite}
-  @keyframes bob{0%,100%{transform:translateY(4px)}50%{transform:translateY(-6px)}}
-  .ph-shine{animation:shine 2s ease-in-out infinite}
-  @keyframes shine{0%,100%{opacity:1;transform:translateY(0)}50%{opacity:.6;transform:translateY(-3px)}}
-  .ph-rise{animation:rise 2.4s ease-in-out infinite}
-  @keyframes rise{0%,100%{transform:translateY(3px)}50%{transform:translateY(-4px)}}
-  .ph-spin{transform-origin:center;animation:turn 3.4s linear infinite}
-  @keyframes turn{to{transform:rotate(360deg)}}
-  .ph-stamp{transform-origin:center;transform-box:fill-box;animation:stamp 2.8s ease-out infinite}
-  @keyframes stamp{0%{transform:scale(1.6);opacity:0}14%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:1}}
-  .ph-shake{animation:shake .5s ease-in-out infinite}
-  @keyframes shake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-2px) rotate(-3deg)}75%{transform:translateX(2px) rotate(3deg)}}
-  .ph-zoom{transform-box:fill-box;transform-origin:center;animation:zoom 2.6s cubic-bezier(.2,.9,.2,1) infinite}
-  @keyframes zoom{0%{transform:scale(1);opacity:0}30%{transform:scale(5.5);opacity:1}100%{transform:scale(7);opacity:0}}
-  @media (prefers-reduced-motion:reduce){
-    .rc{animation:none}
-    .ph-ring,.ph-wobble,.ph-drift,.ph-bob,.ph-shine,.ph-rise,.ph-spin,.ph-stamp,.ph-shake,.ph-zoom{animation:none}
-  }
-  #endcard{display:none;margin-top:12px}
-  #endcard .panel{display:flex;gap:12px;align-items:center;background:#0F1D30;border:1px solid #2c4661;
-                  border-radius:12px;padding:12px}
-  #endcard .art{width:120px;height:88px;flex:0 0 120px;border-radius:9px;overflow:hidden}
-  #endcard b{display:block;font-size:15px;line-height:1.25}
-  #endcard span{display:block;font-size:12px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
-  #endcard em{display:block;font-size:11px;color:var(--muted);margin-top:6px;font-style:normal;opacity:.75}
+  .tech{font-size:11px;color:#6d8399;margin-top:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* ---------- reaction cards ---------- */
+  #cards{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;gap:12px;z-index:40;align-items:flex-end}
+  .rc{display:flex;gap:14px;align-items:center;background:#15273d;border:1px solid #2c4661;
+      border-left:5px solid var(--orange);border-radius:16px;padding:12px 16px;max-width:430px;
+      box-shadow:0 18px 40px rgba(0,0,0,.5);cursor:pointer;animation:pop .24s ease-out;
+      transition:opacity .25s,transform .25s}
+  .rc.out{opacity:0;transform:translateX(20px)}
+  .rc .art{width:152px;height:112px;flex:0 0 152px;border-radius:12px;overflow:hidden;background:#16283F}
+  .rc .txt b{display:block;font-size:15.5px;line-height:1.25;font-weight:600}
+  .rc .txt span{display:block;font-size:12px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+  @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:none}}
+
+  /* ---------- result overlay ---------- */
+  #result{position:fixed;inset:0;background:rgba(4,9,17,.78);backdrop-filter:blur(6px);display:none;
+          align-items:center;justify-content:center;z-index:60;padding:20px}
+  #result.show{display:flex;animation:pop .25s ease-out}
+  .sheet{background:linear-gradient(170deg,#152741,#0e1d31);border:1px solid #2c4661;border-radius:26px;
+         padding:22px;max-width:760px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .sheet .big-art{width:100%;height:280px;border-radius:18px;overflow:hidden;background:#16283F;margin-bottom:16px}
+  .sheet .big-art svg,.sheet .big-art video{width:100%;height:100%;object-fit:cover}
+  .sheet h3{margin:0;font-size:30px;font-weight:800;letter-spacing:-.4px}
+  .sheet .sub{color:var(--muted);font-size:13.5px;margin-top:4px}
+  .scores{display:flex;gap:20px;align-items:center;margin:18px 0 6px;flex-wrap:wrap}
+  .score-num{font-size:52px;font-weight:800;line-height:1;background:linear-gradient(120deg,var(--teal),var(--gold));
+             -webkit-background-clip:text;background-clip:text;color:transparent}
+  .stars{font-size:26px;letter-spacing:3px;color:var(--gold)}
+  .chips{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+  .chip{background:#0f1c2e;border:1px solid var(--edge);border-radius:999px;padding:6px 13px;font-size:12.5px;color:var(--muted)}
+  .chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .sheet .row{margin-top:14px}
+  @media (prefers-reduced-motion:reduce){.rc,#result.show{animation:none}}
 </style>
 </head>
 <body>
-<header>
-  <h1>Phase Hunter</h1>
-  <span class="tag">prototype &middot; Q-SITE 2026 open challenge (scientific)</span>
-</header>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <svg width="42" height="42" viewBox="0 0 52 52" aria-hidden="true">
+        <circle cx="26" cy="26" r="21" fill="#34C2B0" stroke="#0B1424" stroke-width="2.4"/>
+        <path d="M26 5 v11 M20 10 l6 -5 l6 5" stroke="#fff" stroke-width="2.6" fill="none"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="19" cy="23" r="3" fill="#0B1424"/><circle cx="33" cy="23" r="3" fill="#0B1424"/>
+        <path d="M19 33 q7 6 14 0" stroke="#0B1424" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div><h1>Phase Hunter</h1><small>find the hidden phases</small></div>
+    </div>
+    <div class="hud">
+      <div class="pill">⚡ <b id="energy">60</b><div class="bar"><i id="energyBar" style="width:100%"></i></div></div>
+      <div class="pill">📡 pings <b id="pings">0</b></div>
+      <div class="pill">🏆 best <b id="best">—</b></div>
+    </div>
+  </header>
+
+  <div class="levels" id="levels"></div>
+
+  <main>
+    <section class="stage">
+      <canvas id="board" width="720" height="560"></canvas>
+      <div class="hint" id="hint">Tap the fog to scan · drag the orange line to call the border</div>
+      <div class="axis-note">
+        <span>← calm &nbsp;·&nbsp; <b>frustration</b> (κ) &nbsp;·&nbsp; chaotic →</span>
+        <span id="levelNote"></span>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h2>Scan power</h2>
+        <div class="seg" id="shots"></div>
+        <div class="note" style="margin-top:9px">Weak scans are cheap and lie to you. Strong scans cost
+          four times as much and tell the truth.</div>
+      </div>
+
+      <div class="card">
+        <h2>Your call</h2>
+        <button class="btn" id="reveal">Reveal &amp; score</button>
+        <div class="row">
+          <button class="btn ghost" id="agent">Send the AI</button>
+          <button class="btn ghost" id="reset">Restart</button>
+        </div>
+        <div class="note" id="agentNote" style="margin-top:9px">Drag the orange handles so the line
+          splits the ordered regions from the chaotic one, then reveal.</div>
+      </div>
+
+      <div class="card">
+        <h2>Map key</h2>
+        <div class="legend">
+          <div><i style="background:#34C2B0"></i>Locked together <span class="note">(ferromagnetic)</span></div>
+          <div><i style="background:#9B7BD4"></i>Striped pattern <span class="note">(antiphase)</span></div>
+          <div><i style="background:#E08B45"></i>Scrambled <span class="note">(paramagnetic)</span></div>
+          <div><i style="background:#5C9BD1"></i>Drifting sliver <span class="note">(floating)</span></div>
+        </div>
+        <div class="tech" id="tech"></div>
+      </div>
+
+      <div class="card">
+        <h2>Reactions</h2>
+        <div class="row">
+          <button class="btn ghost" id="memes">Memes: on</button>
+          <button class="btn ghost" id="clips">Clips: on</button>
+        </div>
+        <button class="btn ghost" id="testMeme">Preview a card</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
 <div id="cards" aria-live="polite"></div>
-<main>
-  <canvas id="board" width="560" height="560"></canvas>
-  <aside>
-    <div class="card">
-      <h2>Level</h2>
-      <div class="row" id="levels"></div>
-      <div class="note" id="levelNote"></div>
-    </div>
-    <div class="card">
-      <h2>Ping</h2>
-      <div class="row" id="shots"></div>
-      <div class="stat"><span>Energy left</span><b id="energy">60</b></div>
-      <div class="stat"><span>Pings used</span><b id="pings">0</b></div>
-      <div class="note">Click the map to measure there. Cheap pings are noisy: the reading is the true
-        correlator plus shot noise of size sd/&radic;shots.</div>
-    </div>
-    <div class="card">
-      <h2>Your map</h2>
-      <div class="note">Drag the orange handles so the curves separate the phases, then reveal.</div>
-      <div class="row" style="margin-top:8px">
-        <button class="primary" id="reveal">Reveal &amp; score</button>
-        <button id="agent">Run agent</button>
-        <button id="reset">Reset</button>
-      </div>
-      <div id="score"></div>
-      <div id="endcard"></div>
-    </div>
-    <div class="card">
-      <h2>Reactions</h2>
-      <div class="row">
-        <button id="memes" class="active">Memes: on</button>
-        <button id="clips" class="active">Clips: on</button>
-        <button id="testMeme">Preview a card</button>
-      </div>
-      <div class="note">Filmed by us, composited onto backdrops we drew; cards without a clip use the
-        drawn version. Nothing here is a third-party meme image. Each card fires on something that
-        just happened in the physics.</div>
-    </div>
-    <div class="card">
-      <h2>Legend</h2>
-      <div class="legend">
-        <span><i class="dot" style="background:#2FB3A3"></i>ferromagnetic</span>
-        <span><i class="dot" style="background:#9B7BD4"></i>antiphase</span>
-        <span><i class="dot" style="background:#E08B45"></i>paramagnetic</span>
-        <span><i class="dot" style="background:#5C9BD1"></i>floating</span>
-      </div>
-      <div class="note" style="margin-top:8px">A ping shows two rings: the outer ring is the
-        nearest-neighbour correlator, the inner disc the next-nearest one. Scoring ignores the thin
-        floating band, which this prototype does not ask you to draw.</div>
-    </div>
-  </aside>
-</main>
+<div id="result"><div class="sheet" id="sheet"></div></div>
+
 <script src="dataset.js"></script>
 <script src="memes.js"></script>
 <script>
 const PHASE = {FERRO:0, PARA:1, ANTI:2, FLOAT:3};
-const COLORS = ["#2FB3A3","#E08B45","#9B7BD4","#5C9BD1"];
+const COLORS = ["#34C2B0","#E08B45","#9B7BD4","#5C9BD1"];
+const LEVEL_NAMES = [["Clear skies","no interference"],["Static","1% gate errors"],["Whiteout","5% gate errors"]];
 const canvas = document.getElementById("board"), ctx = canvas.getContext("2d");
-const PAD = {l:46, r:14, t:14, b:34};
-let data=null, level=0, shots=100, energy=60, pings=[], revealed=false, drag=null;
+const PAD = {l:58, r:18, t:18, b:44};
 const COST = {20:1, 100:2, 500:4};
-// two polylines the player drags: A spans kappa 0..0.5 (ferro edge), B spans 0.5..1 (antiphase edge)
+const SHOT_LABEL = {20:["Weak","20 shots"],100:["Solid","100 shots"],500:["Deep","500 shots"]};
+let data=null, level=0, shots=100, energy=60, pings=[], revealed=false, drag=null;
 let handlesA=[{k:0.0,h:1.3},{k:0.17,h:1.2},{k:0.34,h:1.1},{k:0.5,h:1.0}];
 let handlesB=[{k:0.5,h:1.0},{k:0.67,h:1.1},{k:0.84,h:1.2},{k:1.0,h:1.3}];
+let best = Number(localStorage.getItem("ph_best")||0) || null;
 
 const px = k => PAD.l + k*(canvas.width-PAD.l-PAD.r);
 const py = h => canvas.height-PAD.b - (h/2)*(canvas.height-PAD.t-PAD.b);
 const toK = x => (x-PAD.l)/(canvas.width-PAD.l-PAD.r);
 const toH = y => 2*(canvas.height-PAD.b-y)/(canvas.height-PAD.t-PAD.b);
 
-function boot(d){ data=d; buildUI(); draw(); }
+function boot(d){ data=d; buildUI(); draw(); if(best) document.getElementById("best").textContent=best.toFixed(0)+"%"; }
 if (window.PHASE_HUNTER_DATA) boot(window.PHASE_HUNTER_DATA);
 else fetch("dataset.json").then(r=>r.json()).then(boot)
-  .catch(()=>{document.getElementById("levelNote").textContent="dataset.js not found - run scripts/make_dataset.py first.";});
+  .catch(()=>{document.getElementById("levelNote").textContent="dataset.js missing - run scripts/make_dataset.py";});
 
 function buildUI(){
-  const box = document.getElementById("levels");
+  const box=document.getElementById("levels");
   data.levels.forEach((lv,i)=>{
-    const b=document.createElement("button");
-    b.textContent = lv.name==="clean" ? "L1 clean (p=0)" : `L${i+1}  p = ${lv.p}`;
-    b.onclick=()=>{const rose = data.levels[i].p > data.levels[level].p; level=i; reset(); syncButtons();
-                   if(rose) react("noise_up", `noise level p = ${data.levels[i].p}`);};
+    const [name,sub]=LEVEL_NAMES[i]||[`Level ${i+1}`,`p = ${lv.p}`];
+    const b=document.createElement("button"); b.className="lvl";
+    b.innerHTML=`<b>${i+1}. ${name}</b><span>${sub}</span>`;
+    b.onclick=()=>{const rose=data.levels[i].p>data.levels[level].p; level=i; reset(); syncButtons();
+                   if(rose) react("noise_up",`noise level p = ${data.levels[i].p}`);};
     box.appendChild(b);
   });
   const sbox=document.getElementById("shots");
   [20,100,500].forEach(s=>{
     const b=document.createElement("button");
-    b.textContent=`${s} shots (${COST[s]})`;
-    b.onclick=()=>{shots=s; syncButtons();};
+    b.innerHTML=`<b>${SHOT_LABEL[s][0]}</b><span>${SHOT_LABEL[s][1]} · ⚡${COST[s]}</span>`;
+    b.dataset.shots=s; b.onclick=()=>{shots=s; syncButtons();};
     sbox.appendChild(b);
   });
   syncButtons();
 }
 function syncButtons(){
   [...document.getElementById("levels").children].forEach((b,i)=>b.classList.toggle("active",i===level));
-  [...document.getElementById("shots").children].forEach(b=>b.classList.toggle("active",b.textContent.startsWith(String(shots))));
+  [...document.getElementById("shots").children].forEach(b=>b.classList.toggle("active",+b.dataset.shots===shots));
   const lv=data.levels[level];
-  document.getElementById("levelNote").innerHTML = lv.placeholder
-    ? `p = ${lv.p}: <b>placeholder noise model</b>, not the challenge's per-CNOT model.`
-    : lv.p > 0
-      ? `Real simulation: VQE state prep on ${data.qubits} qubits with depolarizing noise p = ${lv.p}
-         after every CNOT (PennyLane default.mixed).`
-      : `Real simulation: ANNNI ring, N = ${data.qubits}, no noise.`;
+  document.getElementById("levelNote").textContent = lv.p>0 ? `interference p = ${lv.p}` : "no interference";
+  document.getElementById("tech").textContent = lv.placeholder
+    ? `placeholder noise model · N=${data.qubits}`
+    : lv.p>0 ? `ANNNI ring N=${data.qubits} · VQE prep · depolarizing p=${lv.p} after each CNOT · default.mixed`
+             : `ANNNI ring N=${data.qubits} · exact ground states · p=0`;
 }
-function nearestIndex(arr,v){let best=0,bd=1e9;arr.forEach((a,i)=>{const d=Math.abs(a-v);if(d<bd){bd=d;best=i;}});return best;}
+function hud(){
+  document.getElementById("energy").textContent=energy;
+  document.getElementById("energyBar").style.width=Math.max(0,energy/60*100)+"%";
+  document.getElementById("pings").textContent=pings.length;
+}
+function nearestIndex(arr,v){let b=0,bd=1e9;arr.forEach((a,i)=>{const d=Math.abs(a-v);if(d<bd){bd=d;b=i;}});return b;}
 function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 
-function ping(k,h,cost=true){
-  if(cost && energy < COST[shots]) return null;
-  const a=nearestIndex(data.hs,h), b=nearestIndex(data.kappas,k), lv=data.levels[level];
-  const r={k:data.kappas[b], h:data.hs[a],
-           zz1: lv.zz1[a][b] + data.sd1[a][b]/Math.sqrt(shots)*gauss(),
-           zz2: lv.zz2[a][b] + data.sd2[a][b]/Math.sqrt(shots)*gauss(), shots};
-  if(cost){
-    energy-=COST[shots]; pings.push(r);
-    const sigma = data.sd1[a][b]/Math.sqrt(shots);
-    const repeat = pings.slice(0,-1).some(q=>q.k===r.k && q.h===r.h);
-    if(pings.length===1) react("first_ping", `${shots} shots at κ=${r.k.toFixed(2)}, h=${r.h.toFixed(2)}`);
-    else if(Math.abs(r.zz1 - lv.zz1[a][b]) > 2*sigma)
-      react("noisy_ping", `read ${r.zz1.toFixed(2)} · truth ${lv.zz1[a][b].toFixed(2)} · ${shots} shots`);
-    else if(repeat) react("repeat_ping");
-    else if(data.reference[a][b]===PHASE.FLOAT) react("floating_hit", "that ping landed in the floating band");
-    else if(shots===500) react("big_spend", "4 energy for one sharp reading");
-    else if(shots===20 && ++cheapPings===5) react("cheap_habit", "five cheap pings and counting");
-    if(energy < COST[20]) react("broke", `${pings.length} pings spent`);
-  }
-  document.getElementById("energy").textContent=energy;
-  document.getElementById("pings").textContent=pings.length;
-  return r;
-}
-function curveAt(handles,k){
-  for(let i=0;i<handles.length-1;i++){
-    const p=handles[i], q=handles[i+1];
-    if(k>=p.k && k<=q.k){ const t=(k-p.k)/(q.k-p.k || 1); return p.h+t*(q.h-p.h); }
-  }
-  return handles[handles.length-1].h;
-}
-function playerLabel(k,h){
-  if(k<0.5) return h < curveAt(handlesA,k) ? PHASE.FERRO : PHASE.PARA;
-  return h < curveAt(handlesB,k) ? PHASE.ANTI : PHASE.PARA;
-}
-function score(){
-  let hit=0,total=0;
-  data.hs.forEach((h,a)=>data.kappas.forEach((k,b)=>{
-    const ref=data.reference[a][b];
-    if(ref===PHASE.FLOAT) return;
-    total++; if(playerLabel(k,h)===ref) hit++;
-  }));
-  return hit/total;
-}
-function draw(){
-  if(!data) return;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  const W=canvas.width-PAD.l-PAD.r, H=canvas.height-PAD.t-PAD.b;
-  const cw=W/data.kappas.length, ch=H/data.hs.length;
-  // background: fog, or the truth once revealed
-  data.hs.forEach((h,a)=>data.kappas.forEach((k,b)=>{
-    const x=px(k)-cw/2, y=py(h)-ch/2;
-    if(revealed){ ctx.fillStyle=COLORS[data.reference[a][b]]; ctx.globalAlpha=.85; }
-    else { const n=0.5+0.5*Math.sin(a*12.9898+b*78.233); ctx.fillStyle=`rgb(${10+8*n},${20+10*n},${34+14*n})`; ctx.globalAlpha=1; }
-    ctx.fillRect(x,y,cw+1,ch+1);
-  }));
-  ctx.globalAlpha=1;
-  // pings
-  pings.forEach(p=>{
-    const x=px(p.k), y=py(p.h);
-    ctx.beginPath(); ctx.arc(x,y,13,0,7); ctx.fillStyle="rgba(255,255,255,.07)"; ctx.fill();
-    ctx.beginPath(); ctx.arc(x,y,8,0,7); ctx.fillStyle=viridis(clamp01(p.zz1)); ctx.fill();
-    ctx.strokeStyle="rgba(255,255,255,.75)"; ctx.lineWidth=1; ctx.stroke();
-    ctx.beginPath(); ctx.arc(x,y,3.4,0,7); ctx.fillStyle=diverging(clamp01(0.5+0.5*p.zz2)); ctx.fill();
-  });
-  // player's curves
-  [[handlesA,"#E08B45"],[handlesB,"#E08B45"]].forEach(([hs,color])=>{
-    ctx.beginPath(); hs.forEach((p,i)=> i?ctx.lineTo(px(p.k),py(p.h)):ctx.moveTo(px(p.k),py(p.h)));
-    ctx.strokeStyle=color; ctx.lineWidth=2.2; ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
-    hs.forEach(p=>{ ctx.beginPath(); ctx.arc(px(p.k),py(p.h),5.5,0,7); ctx.fillStyle=color; ctx.fill();
-                    ctx.strokeStyle="#0B1424"; ctx.lineWidth=1.5; ctx.stroke(); });
-  });
-  axes();
-}
-function clamp01(v){return Math.max(0,Math.min(1,v));}
-function viridis(t){const c=[[68,1,84],[59,82,139],[33,145,140],[94,201,98],[253,231,37]];const i=Math.min(3,Math.floor(t*4));const f=t*4-i;const a=c[i],b=c[i+1];return `rgb(${a.map((v,j)=>Math.round(v+f*(b[j]-v))).join(",")})`;}
-function diverging(t){const c=[[103,0,31],[214,96,77],[247,247,247],[67,147,195],[5,48,97]];const i=Math.min(3,Math.floor(t*4));const f=t*4-i;const a=c[i],b=c[i+1];return `rgb(${a.map((v,j)=>Math.round(v+f*(b[j]-v))).join(",")})`;}
-function axes(){
-  ctx.strokeStyle="#24384f"; ctx.lineWidth=1; ctx.fillStyle="#93A9BD"; ctx.font="11px system-ui";
-  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,canvas.height-PAD.b); ctx.lineTo(canvas.width-PAD.r,canvas.height-PAD.b); ctx.stroke();
-  [0,0.25,0.5,0.75,1].forEach(k=>{ctx.fillText(k.toFixed(2),px(k)-11,canvas.height-PAD.b+16);});
-  [0,0.5,1,1.5,2].forEach(h=>{ctx.fillText(h.toFixed(1),8,py(h)+4);});
-  ctx.fillText("κ  (frustration)",canvas.width/2-34,canvas.height-6);
-  ctx.save(); ctx.translate(14,canvas.height/2+22); ctx.rotate(-Math.PI/2); ctx.fillText("h  (field)",0,0); ctx.restore();
-}
-canvas.addEventListener("pointerdown",e=>{
-  if(!data) return;
-  const rect=canvas.getBoundingClientRect();
-  const x=(e.clientX-rect.left)*canvas.width/rect.width, y=(e.clientY-rect.top)*canvas.height/rect.height;
-  for(const hs of [handlesA,handlesB])
-    for(const p of hs)
-      if(Math.hypot(px(p.k)-x,py(p.h)-y)<11){ drag=p; return; }
-  const k=toK(x), h=toH(y);
-  if(k>=0&&k<=1&&h>=0&&h<=2){ ping(k,h); draw(); }
-});
-canvas.addEventListener("pointermove",e=>{
-  if(!drag) return;
-  const rect=canvas.getBoundingClientRect();
-  const y=(e.clientY-rect.top)*canvas.height/rect.height;
-  drag.h=Math.max(0,Math.min(2,toH(y))); draw();
-});
-window.addEventListener("pointerup",()=>{drag=null;});
-function endPanel(id, headline, detail){
-  const wrap=document.getElementById("endcard");
-  wrap.innerHTML = `<div class="panel">
-      <div class="art">${art(id)}</div>
-      <div><b>${CARDS[id].text}</b><span>${headline}</span><em>${detail}</em></div>
-    </div>`;
-  wrap.style.display="block";
-}
-document.getElementById("reveal").onclick=()=>{
-  revealed=true; draw();
-  const s=score();
-  document.getElementById("score").innerHTML=
-    `<div class="big">${(s*100).toFixed(1)}%</div><div class="note">cells labelled correctly (floating band excluded),
-     using ${pings.length} pings and ${60-energy} energy.</div>`;
-  const id = (agentScore!==null && s>agentScore) ? "beat_agent"
-           : (agentScore!==null && s<agentScore) ? "lost_agent"
-           : s>=0.95 ? "reveal_high" : s>=0.80 ? "reveal_mid" : "reveal_low";
-  const vs = agentScore!==null ? ` · agent ${(agentScore*100).toFixed(1)}%` : "";
-  react(id, `${(s*100).toFixed(1)}%${vs}`);
-  endPanel(id, `${(s*100).toFixed(1)}% correct · ${pings.length} pings · ${60-energy} energy${vs}`,
-           `Phase Hunter · ANNNI ring N=${data.qubits} · level ${data.levels[level].name}`);
-};
-document.getElementById("reset").onclick=reset;
-function reset(){
-  energy=60; pings=[]; revealed=false; cheapPings=0;
-  document.getElementById("score").innerHTML="";
-  const ec=document.getElementById("endcard"); if(ec){ ec.style.display="none"; ec.innerHTML=""; }
-  document.getElementById("energy").textContent=energy;
-  document.getElementById("pings").textContent=0;
-  draw();
-}
-
-let memesOn = true, lastCard = 0, cheapPings = 0, agentScore = null;
-/* Filmed reaction clips (our own footage, composited over backdrops we drew).
-   A card falls back to its drawing if the clip is missing or won't play.      */
-const CLIPS = {
-  beat_agent:  "clips/cards/beat_agent.webm",
-  reveal_low:  "clips/cards/reveal_low.webm",
-  noisy_ping:  "clips/cards/noisy_ping.webm",
-  broke:       "clips/cards/broke.webm",
-  reveal_high: "clips/cards/reveal_high.webm"
-};
-let useClips = true;
+let memesOn=true, useClips=true, lastCard=0, cheapPings=0, agentScore=null;
+const CLIPS = {beat_agent:"clips/cards/beat_agent.webm", reveal_low:"clips/cards/reveal_low.webm",
+               noisy_ping:"clips/cards/noisy_ping.webm", broke:"clips/cards/broke.webm",
+               reveal_high:"clips/cards/reveal_high.webm"};
 function art(id){
   if (useClips && CLIPS[id])
     return `<video src="${CLIPS[id]}" autoplay muted loop playsinline
               onerror="this.parentNode.innerHTML=SCENES[CARDS['${id}'].scene]"
               style="width:100%;height:100%;object-fit:cover"></video>`;
-  return SCENES[CARDS[id].scene] || "";
+  return SCENES[CARDS[id].scene]||"";
 }
 function react(id, detail){
-  if(!memesOn || !CARDS[id]) return;
-  const now = Date.now();
-  if(now - lastCard < 1200) return;          // at most one card at a time
-  lastCard = now;
-  const card = document.createElement("div");
-  card.className = "rc";
-  card.innerHTML = `<div class="art">${art(id)}</div>` +
-    `<div class="txt"><b>${CARDS[id].text}</b>${detail?`<span>${detail}</span>`:""}</div>`;
-  const kill = () => { card.classList.add("out"); setTimeout(()=>card.remove(), 260); };
-  card.onclick = kill;
-  document.getElementById("cards").appendChild(card);
-  setTimeout(kill, 4200);
+  if(!memesOn||!CARDS[id]) return;
+  const now=Date.now(); if(now-lastCard<1200) return; lastCard=now;
+  const card=document.createElement("div"); card.className="rc";
+  card.innerHTML=`<div class="art">${art(id)}</div><div class="txt"><b>${CARDS[id].text}</b>${detail?`<span>${detail}</span>`:""}</div>`;
+  const kill=()=>{card.classList.add("out"); setTimeout(()=>card.remove(),260);};
+  card.onclick=kill; document.getElementById("cards").appendChild(card); setTimeout(kill,4400);
 }
 
-// Baseline "agent": bisects in h along a few kappa columns to find where order disappears.
+function ping(k,h,cost=true){
+  if(cost && energy<COST[shots]) { react("broke",`${pings.length} scans spent`); return null; }
+  const a=nearestIndex(data.hs,h), b=nearestIndex(data.kappas,k), lv=data.levels[level];
+  const r={k:data.kappas[b], h:data.hs[a], shots,
+           zz1: lv.zz1[a][b] + data.sd1[a][b]/Math.sqrt(shots)*gauss(),
+           zz2: lv.zz2[a][b] + data.sd2[a][b]/Math.sqrt(shots)*gauss()};
+  if(cost){
+    energy-=COST[shots]; pings.push(r);
+    const sigma=data.sd1[a][b]/Math.sqrt(shots);
+    const repeat=pings.slice(0,-1).some(q=>q.k===r.k&&q.h===r.h);
+    if(pings.length===1){ document.getElementById("hint").classList.add("gone"); }
+    if(pings.length===1) react("first_ping",`${shots} shots at κ=${r.k.toFixed(2)}, h=${r.h.toFixed(2)}`);
+    else if(Math.abs(r.zz1-lv.zz1[a][b])>2*sigma)
+      react("noisy_ping",`read ${r.zz1.toFixed(2)} · truth ${lv.zz1[a][b].toFixed(2)} · ${shots} shots`);
+    else if(repeat) react("repeat_ping");
+    else if(data.reference[a][b]===PHASE.FLOAT) react("floating_hit","that scan landed in the drifting sliver");
+    else if(shots===500) react("big_spend","4 energy for one sharp reading");
+    else if(shots===20 && ++cheapPings===5) react("cheap_habit","five weak scans and counting");
+    if(energy<COST[20]) react("broke",`${pings.length} scans spent`);
+  }
+  hud(); return r;
+}
+function curveAt(handles,k){
+  for(let i=0;i<handles.length-1;i++){
+    const p=handles[i],q=handles[i+1];
+    if(k>=p.k&&k<=q.k){const t=(k-p.k)/(q.k-p.k||1); return p.h+t*(q.h-p.h);}
+  }
+  return handles[handles.length-1].h;
+}
+const playerLabel=(k,h)=> k<0.5 ? (h<curveAt(handlesA,k)?PHASE.FERRO:PHASE.PARA)
+                                : (h<curveAt(handlesB,k)?PHASE.ANTI:PHASE.PARA);
+function score(){
+  let hit=0,total=0;
+  data.hs.forEach((h,a)=>data.kappas.forEach((k,b)=>{
+    const ref=data.reference[a][b]; if(ref===PHASE.FLOAT) return;
+    total++; if(playerLabel(k,h)===ref) hit++;
+  }));
+  return hit/total;
+}
+function clamp01(v){return Math.max(0,Math.min(1,v));}
+function viridis(t){const c=[[68,1,84],[59,82,139],[33,145,140],[94,201,98],[253,231,37]];const i=Math.min(3,Math.floor(t*4));const f=t*4-i;const a=c[i],b=c[i+1];return `rgb(${a.map((v,j)=>Math.round(v+f*(b[j]-v))).join(",")})`;}
+function diverging(t){const c=[[103,0,31],[214,96,77],[247,247,247],[67,147,195],[5,48,97]];const i=Math.min(3,Math.floor(t*4));const f=t*4-i;const a=c[i],b=c[i+1];return `rgb(${a.map((v,j)=>Math.round(v+f*(b[j]-v))).join(",")})`;}
+
+function draw(){
+  if(!data) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const W=canvas.width-PAD.l-PAD.r, H=canvas.height-PAD.t-PAD.b;
+  const cw=W/data.kappas.length, ch=H/data.hs.length;
+  data.hs.forEach((h,a)=>data.kappas.forEach((k,b)=>{
+    const x=px(k)-cw/2, y=py(h)-ch/2;
+    if(revealed){ ctx.fillStyle=COLORS[data.reference[a][b]]; ctx.globalAlpha=.9; }
+    else { const n=0.5+0.5*Math.sin(a*12.9898+b*78.233);
+           ctx.fillStyle=`rgb(${8+9*n},${17+11*n},${30+16*n})`; ctx.globalAlpha=1; }
+    ctx.fillRect(x,y,cw+1,ch+1);
+  }));
+  ctx.globalAlpha=1;
+  pings.forEach(p=>{
+    const x=px(p.k), y=py(p.h);
+    ctx.beginPath(); ctx.arc(x,y,20,0,7); ctx.fillStyle="rgba(255,255,255,.06)"; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,11,0,7); ctx.fillStyle=viridis(clamp01(p.zz1)); ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,.85)"; ctx.lineWidth=1.6; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,4.6,0,7); ctx.fillStyle=diverging(clamp01(0.5+0.5*p.zz2)); ctx.fill();
+  });
+  [handlesA,handlesB].forEach(hs=>{
+    ctx.beginPath(); hs.forEach((p,i)=> i?ctx.lineTo(px(p.k),py(p.h)):ctx.moveTo(px(p.k),py(p.h)));
+    ctx.strokeStyle="#E08B45"; ctx.lineWidth=3; ctx.setLineDash([9,6]); ctx.stroke(); ctx.setLineDash([]);
+    hs.forEach(p=>{ ctx.beginPath(); ctx.arc(px(p.k),py(p.h),8,0,7); ctx.fillStyle="#E08B45"; ctx.fill();
+                    ctx.strokeStyle="#070E1A"; ctx.lineWidth=2.4; ctx.stroke(); });
+  });
+  axes();
+}
+function axes(){
+  ctx.strokeStyle="#24384f"; ctx.lineWidth=1; ctx.fillStyle="#8FA6BA"; ctx.font="12px Outfit,system-ui";
+  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,canvas.height-PAD.b);
+  ctx.lineTo(canvas.width-PAD.r,canvas.height-PAD.b); ctx.stroke();
+  [0,0.25,0.5,0.75,1].forEach(k=>ctx.fillText(k.toFixed(2),px(k)-12,canvas.height-PAD.b+20));
+  [0,0.5,1,1.5,2].forEach(h=>ctx.fillText(h.toFixed(1),14,py(h)+4));
+  ctx.save(); ctx.translate(26,canvas.height/2+30); ctx.rotate(-Math.PI/2);
+  ctx.fillText("field strength  (h)",0,0); ctx.restore();
+}
+
+canvas.addEventListener("pointerdown",e=>{
+  if(!data) return;
+  const r=canvas.getBoundingClientRect();
+  const x=(e.clientX-r.left)*canvas.width/r.width, y=(e.clientY-r.top)*canvas.height/r.height;
+  for(const hs of [handlesA,handlesB]) for(const p of hs)
+    if(Math.hypot(px(p.k)-x,py(p.h)-y)<16){ drag=p; return; }
+  const k=toK(x), h=toH(y);
+  if(k>=0&&k<=1&&h>=0&&h<=2){ ping(k,h); draw(); }
+});
+canvas.addEventListener("pointermove",e=>{
+  if(!drag) return;
+  const r=canvas.getBoundingClientRect();
+  drag.h=Math.max(0,Math.min(2,toH((e.clientY-r.top)*canvas.height/r.height))); draw();
+});
+window.addEventListener("pointerup",()=>{drag=null;});
+
+function stars(s){ return s>=.95?"★★★":s>=.88?"★★☆":s>=.75?"★☆☆":"☆☆☆"; }
+function showResult(id, s){
+  const beatAgent = agentScore!==null && s>agentScore;
+  document.getElementById("sheet").innerHTML = `
+    <div class="big-art">${art(id)}</div>
+    <h3>${CARDS[id].text}</h3>
+    <div class="sub">${data.levels[level].p>0?`Interference p = ${data.levels[level].p}`:"No interference"} ·
+      ANNNI ring N = ${data.qubits}</div>
+    <div class="scores">
+      <div><div class="score-num">${(s*100).toFixed(1)}%</div>
+        <div class="sub">map called correctly</div></div>
+      <div class="stars">${stars(s)}</div>
+    </div>
+    <div class="chips">
+      <span class="chip">scans <b>${pings.length}</b></span>
+      <span class="chip">energy <b>${60-energy}</b></span>
+      ${agentScore!==null?`<span class="chip">AI <b>${(agentScore*100).toFixed(1)}%</b></span>`:""}
+      ${best?`<span class="chip">best <b>${best.toFixed(1)}%</b></span>`:""}
+    </div>
+    <div class="row">
+      <button class="btn" id="again">Play again</button>
+      ${level<data.levels.length-1?`<button class="btn ghost" id="next">Next level →</button>`:""}
+      <button class="btn ghost" id="close">Look at the map</button>
+    </div>`;
+  document.getElementById("result").classList.add("show");
+  document.getElementById("again").onclick=()=>{hideResult(); reset();};
+  document.getElementById("close").onclick=hideResult;
+  const next=document.getElementById("next");
+  if(next) next.onclick=()=>{hideResult(); level++; reset(); syncButtons();
+                             react("noise_up",`interference p = ${data.levels[level].p}`);};
+  if(beatAgent) react("beat_agent",`you ${(s*100).toFixed(1)}% · AI ${(agentScore*100).toFixed(1)}%`);
+}
+function hideResult(){ document.getElementById("result").classList.remove("show"); }
+
+document.getElementById("reveal").onclick=()=>{
+  revealed=true; draw();
+  const s=score();
+  if(!best||s*100>best){ best=s*100; localStorage.setItem("ph_best",best); }
+  document.getElementById("best").textContent=best.toFixed(0)+"%";
+  const id = (agentScore!==null&&s>agentScore) ? "beat_agent"
+           : (agentScore!==null&&s<agentScore) ? "lost_agent"
+           : s>=0.95 ? "reveal_high" : s>=0.80 ? "reveal_mid" : "reveal_low";
+  showResult(id,s);
+};
+document.getElementById("reset").onclick=()=>{hideResult(); reset();};
+function reset(){
+  energy=60; pings=[]; revealed=false; cheapPings=0; agentScore=null;
+  document.getElementById("agentNote").textContent =
+    "Drag the orange handles so the line splits the ordered regions from the chaotic one, then reveal.";
+  hud(); draw();
+  document.getElementById("hint").classList.remove("gone");
+}
 document.getElementById("agent").onclick=()=>{
   reset(); shots=100; syncButtons();
-  const columns=[0.05,0.2,0.35,0.45,0.6,0.75,0.9,1.0];
-  const found={};
+  const columns=[0.05,0.2,0.35,0.45,0.6,0.75,0.9,1.0], found={};
   columns.forEach(k=>{
     let lo=0, hi=2;
     for(let step=0; step<3 && energy>=COST[shots]; step++){
-      const mid=(lo+hi)/2, r=ping(k,mid);
-      if(!r) break;
+      const mid=(lo+hi)/2, r=ping(k,mid,true); if(!r) break;
       const ordered = k<0.5 ? r.zz1>0.5 : r.zz2<-0.5;
       if(ordered) lo=mid; else hi=mid;
     }
@@ -373,24 +426,10 @@ document.getElementById("agent").onclick=()=>{
   });
   handlesA=handlesA.map(p=>({k:p.k,h:interp(found,p.k)}));
   handlesB=handlesB.map(p=>({k:p.k,h:interp(found,p.k)}));
-  draw();
-  agentScore = score();
-  document.getElementById("score").innerHTML=
-    `<div class="note">Agent placed ${pings.length} pings by bisection and scored
-     ${(agentScore*100).toFixed(1)}%. Reset, beat that, then reveal.</div>`;
-};
-document.getElementById("memes").onclick=e=>{
-  memesOn=!memesOn; e.target.textContent = memesOn ? "Memes: on" : "Memes: off";
-  e.target.classList.toggle("active", memesOn);
-};
-document.getElementById("clips").onclick=e=>{
-  useClips=!useClips;
-  e.target.textContent = useClips ? "Clips: on" : "Clips: off";
-  e.target.classList.toggle("active", useClips);
-};
-document.getElementById("testMeme").onclick=()=>{
-  const keys=Object.keys(CARDS); lastCard=0;
-  react(keys[Math.floor(Math.random()*keys.length)], "preview");
+  draw(); agentScore=score();
+  document.getElementById("agentNote").innerHTML =
+    `The AI spent ${pings.length} scans and would score <b>${(agentScore*100).toFixed(1)}%</b>.
+     Restart and beat it.`;
 };
 function interp(found,k){
   const keys=Object.keys(found).map(Number).sort((a,b)=>a-b);
@@ -401,6 +440,16 @@ function interp(found,k){
   }
   return 1;
 }
+document.getElementById("memes").onclick=e=>{
+  memesOn=!memesOn; e.target.textContent=memesOn?"Memes: on":"Memes: off";
+};
+document.getElementById("clips").onclick=e=>{
+  useClips=!useClips; e.target.textContent=useClips?"Clips: on":"Clips: off";
+};
+document.getElementById("testMeme").onclick=()=>{
+  const keys=Object.keys(CARDS); lastCard=0;
+  react(keys[Math.floor(Math.random()*keys.length)],"preview");
+};
 </script>
 </body>
 </html>
