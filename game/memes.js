@@ -46,15 +46,50 @@ const svg = (w,h,body,bg="#16283F") =>
      <rect width="${w}" height="${h}" rx="10" fill="${bg}"/>${body}</svg>`;
 const P = MEME_PALETTE;
 
+
+/* ---- meme-macro furniture --------------------------------------------
+   Caption bars in heavy condensed type with a black outline: the image-macro
+   look, built from our own art. `macro()` wraps any scene body.            */
+const CAP = `font-family:"Anton","Arial Narrow",Impact,system-ui;font-weight:900;letter-spacing:.5px`;
+function caption(text, y, size=19){
+  return `<text x="75" y="${y}" text-anchor="middle" style="${CAP}" font-size="${size}"
+            fill="#FFFFFF" stroke="#000000" stroke-width="4.5" paint-order="stroke"
+            stroke-linejoin="round">${text}</text>`;
+}
+function macro(body, top, bottom, bg="#16283F"){
+  return svg(150,110,`${body}
+    ${top ? caption(top, 22) : ""}
+    ${bottom ? caption(bottom, 100) : ""}`, bg);
+}
+/* a retro dialog box of our own design - our title bar, our icon */
+function dialog(title, line, line2="", button="OK"){
+  return svg(150,110,`
+    <rect x="8" y="18" width="134" height="74" rx="3" fill="#D9DEE3" stroke="#0B1424" stroke-width="2"/>
+    <rect x="8" y="18" width="134" height="16" fill="${P.skin2}" stroke="#0B1424" stroke-width="2"/>
+    <text x="14" y="30" font-size="10" font-family="system-ui" font-weight="700" fill="#E8F0F4">${title}</text>
+    <g transform="translate(132 26)"><rect x="-7" y="-6" width="14" height="12" fill="#C0453A" stroke="#0B1424"/>
+      <path d="M-3 -2 l6 4 M3 -2 l-6 4" stroke="#fff" stroke-width="1.6"/></g>
+    <circle cx="30" cy="56" r="11" fill="${P.blue}" stroke="#0B1424" stroke-width="2"/>
+    <text x="30" y="61" text-anchor="middle" font-size="14" font-family="Georgia,serif"
+          font-weight="700" fill="#fff">i</text>
+    <text x="50" y="${line2 ? 54 : 59}" font-size="10" font-family="system-ui" fill="#0B1424">${line}</text>
+    ${line2 ? `<text x="50" y="66" font-size="10" font-family="system-ui" fill="#0B1424">${line2}</text>` : ""}
+    <g transform="translate(75 81)"><rect x="-22" y="-9" width="44" height="17" rx="2" fill="#E8ECEF"
+        stroke="#0B1424" stroke-width="2"/>
+      <text x="0" y="3" text-anchor="middle" font-size="10" font-family="system-ui"
+            fill="#0B1424">${button}</text></g>`, "#0B1424");
+}
+
 /* ---- scenes ----------------------------------------------------------- */
 const SCENES = {
   /* a wobbly measuring stick and two numbers that disagree */
-  trust: svg(150,110,`
-    <text x="14" y="26" fill="${P.grey}" font-size="13" font-family="system-ui">truth 0.48</text>
-    <text x="14" y="96" fill="${P.orange}" font-size="15" font-weight="700" font-family="system-ui">read 0.71</text>
-    <path d="M12 60 H138" stroke="${P.grey}" stroke-width="2" stroke-dasharray="4 5"/>
-    <path class="ph-wobble" d="M30 60 q20 -26 40 -4 q18 20 40 -16" stroke="${P.orange}" stroke-width="3" fill="none" stroke-linecap="round"/>
-    ${spin("shock",112,34,0.72)}`),
+  trust: macro(`
+    <path d="M12 64 H138" stroke="${P.grey}" stroke-width="2" stroke-dasharray="4 5"/>
+    <path class="ph-wobble" d="M24 64 q22 -24 44 -2 q20 20 46 -14" stroke="${P.orange}"
+          stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <g class="ph-shake">${spin("smug",36,56,0.78)}</g>
+    <path d="M62 52 q14 -8 26 -2" stroke="${P.light}" stroke-width="2" fill="none" opacity=".5"/>
+    ${spin("flat",112,62,0.62)}`, "I'M TELLING YOU BRO", "IT WAS 0.71"),
 
   /* sonar rings going out from the mascot */
   sonar: svg(150,110,`
@@ -64,7 +99,7 @@ const SCENES = {
     ${spin("neutral",60,58,0.85)}`),
 
   /* sunglasses drop: mascot above a beaten robot rival */
-  shades: svg(150,110,`
+  shades: macro(`
     ${spin("cool",50,55,1.05)}
     <g transform="translate(112 62)">
       <rect x="-16" y="-16" width="32" height="30" rx="7" fill="${P.dark}" stroke="${P.grey}" stroke-width="2"/>
@@ -72,45 +107,45 @@ const SCENES = {
       <path d="M-7 7 q7 -5 14 0" stroke="${P.grey}" stroke-width="2" fill="none" stroke-linecap="round"/>
       <path d="M0 -16 v-7" stroke="${P.grey}" stroke-width="2"/><circle cx="0" cy="-25" r="2.6" fill="${P.grey}"/>
     </g>
-    <text x="96" y="100" fill="${P.grey}" font-size="11" font-family="system-ui">the agent</text>`),
+    <g class="ph-zoom">${spin("cool",50,58,0.15)}</g>`, "", "GET REKT, AGENT"),
 
   /* the scenic route: a winding path past the target */
-  scenic: svg(150,110,`
+  scenic: macro(`
     <path d="M16 94 q30 -18 12 -34 q-16 -16 24 -24 q40 -8 76 10" stroke="${P.orange}" stroke-width="3"
           fill="none" stroke-dasharray="6 6" stroke-linecap="round"/>
     <circle cx="128" cy="46" r="7" fill="none" stroke="${P.light}" stroke-width="2"/>
     <circle cx="128" cy="46" r="2.5" fill="${P.light}"/>
     ${spin("sweat",34,72,0.62,-8)}
     <g transform="translate(58 84)"><rect x="-9" y="-7" width="18" height="13" rx="2" fill="${P.purple}"/>
-      <path d="M-4 -7 v-3 h8 v3" stroke="${P.purple}" stroke-width="2" fill="none"/></g>`),
+      <path d="M-4 -7 v-3 h8 v3" stroke="${P.purple}" stroke-width="2" fill="none"/></g>`,
+    "", "THE SCENIC ROUTE"),
 
   /* empty battery */
-  broke: svg(150,110,`
+  broke: macro(`
     <g transform="translate(96 56)">
       <rect x="-34" y="-17" width="64" height="34" rx="6" fill="none" stroke="${P.grey}" stroke-width="3"/>
       <rect x="34" y="-7" width="6" height="14" rx="2" fill="${P.grey}"/>
       <rect x="-29" y="-12" width="8" height="24" rx="2" fill="${P.orange}"/>
     </g>
-    ${spin("dizzy",40,58,0.8)}`),
+    ${spin("dizzy",40,58,0.8)}`, "", "BUDGET: 0"),
 
   /* floating phase: mascot drifting up on a balloon between two lines */
-  floating: svg(150,110,`
-    <path d="M10 82 H140" stroke="${P.purple}" stroke-width="2.5"/>
-    <path d="M10 34 H140" stroke="${P.orange}" stroke-width="2.5" stroke-dasharray="5 5"/>
-    <text x="12" y="96" fill="${P.purple}" font-size="10" font-family="system-ui">antiphase</text>
-    <text x="12" y="26" fill="${P.orange}" font-size="10" font-family="system-ui">paramagnet</text>
+  floating: macro(`
+    <path d="M10 78 H140" stroke="${P.purple}" stroke-width="2.5"/>
+    <path d="M10 40 H140" stroke="${P.orange}" stroke-width="2.5" stroke-dasharray="5 5"/>
     <g class="ph-bob"><path d="M75 46 v12" stroke="${P.light}" stroke-width="1.5"/>
     <ellipse cx="75" cy="40" rx="9" ry="11" fill="${P.blue}" opacity=".8"/>
-    ${spin("shock",75,66,0.6)}</g>`),
+    ${spin("shock",75,66,0.6)}</g>`, "IT WAS FLOATING", "THE WHOLE TIME"),
 
   /* fog rolling in */
-  fog: svg(150,110,`
-    ${spin("sweat",44,66,0.8)}
+  fog: macro(`
+    ${spin("sweat",40,64,0.78)}
     <g class="ph-drift" fill="${P.grey}" opacity=".35">
-      <ellipse cx="104" cy="44" rx="34" ry="14"/><ellipse cx="122" cy="62" rx="28" ry="12"/>
+      <ellipse cx="104" cy="48" rx="34" ry="14"/><ellipse cx="122" cy="64" rx="28" ry="12"/>
       <ellipse cx="96" cy="78" rx="32" ry="13"/>
     </g>
-    <g class="ph-drift ph-slow" fill="${P.grey}" opacity=".2"><ellipse cx="70" cy="90" rx="46" ry="12"/></g>`),
+    <g class="ph-drift ph-slow" fill="${P.grey}" opacity=".2"><ellipse cx="70" cy="86" rx="46" ry="12"/></g>`,
+    "THE FOG IS COMING", "RUN"),
 
   /* two-panel: cheap vs sharp ping */
   twopanel: svg(150,110,`
@@ -173,7 +208,8 @@ const SCENES = {
     </g></g>`),
 
   /* mid score: a shrug with a wonky boundary */
-  wonky: svg(150,110,`
+  wonky: dialog("phase_hunter.exe", "Task failed", "successfully."),
+  wonky_old: svg(150,110,`
     <path d="M14 86 q26 -10 40 -34 q14 -24 34 -6 q18 16 46 -12" stroke="${P.light}" stroke-width="2.5"
           fill="none" opacity=".45"/>
     <path d="M14 78 q30 -4 44 -28 q12 -20 32 -2 q20 18 46 -16" stroke="${P.orange}" stroke-width="3"
