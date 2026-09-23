@@ -132,9 +132,11 @@ work should pick N = 8 or 12, never 6 or 10.
 |---|---|
 | Noisy phase diagrams at p = 0.01 and p = 0.05 | **Done** (above), N = 8, 24 x 24, 58 minutes of simulation. |
 | PennyLane path executed | **Done.** The Hamiltonian was cross-checked against the numpy reference, and the scan ran in the track environment. |
-| Measurement-budget study (human / grid / random / agent) | Not started. |
+| Measurement-budget study | **Done** — `scripts/budget_study.py`, figure below. Random sampling needs 36 pings to label 90% of the clean map correctly; adaptive sampling needs 24. |
 | Floating-phase detection | Not attempted. The handout calls it very hard at small N. |
-| Writeup (2–3 pages) and presentation video | Not started. |
+| Writeup (2–3 pages) | **Done** — `docs/Phase_Hunter_Writeup.pdf`, generated from the result JSON by `scripts/make_writeup.py` so it cannot drift from the runs. |
+| Notebook | **Done** — `phase_hunter.ipynb`, every cell executed with outputs stored. |
+| Presentation video | Not recorded yet. |
 
 ### Two honesty notes
 
@@ -147,6 +149,18 @@ work should pick N = 8 or 12, never 6 or 10.
    `numpy.linalg.eigh`. `src/pennylane_pipeline.py` constructs the same Hamiltonian with
    `qml.dot`, and `scripts/run_pennylane.py --check` compares the two matrices element by element.
    The final submitted diagrams will come from the PennyLane path.
+
+### How many measurements does a boundary cost?
+
+![budget study](figures/budget_study.png)
+
+Four strategies pick where to measure under a fixed budget; each ping carries real shot noise; a
+boundary is reconstructed from the pings alone and scored against ground truth over 40 seeds. Adaptive
+sampling — a coarse sweep, then every remaining ping beside the current boundary estimate — is worth
+the most where budget is scarce: at 10 pings on the clean stage it labels 88% of the map correctly
+against 77% for bisection and 82% for random. Random sampling needs roughly twice the budget of any
+structured strategy to clear 90%. By 36–50 pings all four converge near 92–93%, the ceiling set by the
+reconstruction and the grid, so the advantage is in the cheap regime rather than asymptotically.
 
 ---
 
@@ -178,6 +192,11 @@ scripts/make_dataset.py    grid scan -> data/ + game/dataset.js
 scripts/make_figures.py    figures/
 scripts/run_pennylane.py   cross-check and noise pilot
 scripts/make_gifs.py       records figures/gameplay.gif and figures/memes.gif from the live game
+scripts/make_stages.py     builds the five game stages (8/6/12 spins, three noise levels)
+scripts/analyse_noise.py   phase diagrams under noise + the noise analysis
+scripts/budget_study.py    how many measurements a boundary costs, by strategy
+scripts/make_writeup.py    renders docs/Phase_Hunter_Writeup.pdf from the result JSON
+phase_hunter.ipynb         the submission notebook: every result, executed
 game/index.html            playable prototype (no build step)
 game/memes.js              original mascot art and the thirteen reaction cards
 docs/Phase_Hunter_Plan.pdf full project plan: game design, levels, experiment, schedule
