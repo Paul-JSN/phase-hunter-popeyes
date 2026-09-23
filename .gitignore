@@ -8,3 +8,4 @@ data/pennylane_scan_N6.npz
 game/clips/*.mp4
 game/clips/*.mov
 game/clips/_work/
+_to_delete/
