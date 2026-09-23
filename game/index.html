@@ -101,7 +101,40 @@
   .chip{background:#0f1c2e;border:1px solid var(--edge);border-radius:999px;padding:6px 13px;font-size:12.5px;color:var(--muted)}
   .chip b{color:var(--ink);font-variant-numeric:tabular-nums}
   .sheet .row{margin-top:14px}
-  @media (prefers-reduced-motion:reduce){.rc,#result.show{animation:none}}
+  /* ---------- info overlays ---------- */
+  .icon-btn{width:42px;height:42px;border-radius:13px;background:var(--panel);border:1px solid var(--edge);
+            color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:.15s;padding:0}
+  .icon-btn:hover{transform:translateY(-2px);border-color:var(--teal);background:#16304a}
+  #info{position:fixed;inset:0;background:rgba(4,9,17,.82);backdrop-filter:blur(7px);display:none;
+        align-items:flex-start;justify-content:center;z-index:70;padding:26px;overflow-y:auto}
+  #info.show{display:flex;animation:pop .25s ease-out}
+  .doc{background:linear-gradient(170deg,#152741,#0d1c2f);border:1px solid #2c4661;border-radius:26px;
+       padding:26px 30px;max-width:820px;width:100%;margin:auto;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .doc h3{margin:0 0 4px;font-size:28px;font-weight:800;letter-spacing:-.4px}
+  .doc .kicker{color:var(--teal);font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+  .doc h4{margin:22px 0 8px;font-size:15px;font-weight:600}
+  .doc p{margin:0 0 10px;color:#C6D8E6;font-size:14.5px}
+  .doc .small{color:var(--muted);font-size:12.5px}
+  .steps{display:grid;gap:10px;margin:6px 0 4px}
+  .step{display:flex;gap:13px;align-items:flex-start;background:#0f1c2e;border:1px solid var(--edge);
+        border-radius:14px;padding:12px 14px}
+  .step .n{width:26px;height:26px;flex:0 0 26px;border-radius:50%;background:var(--teal);color:#06231f;
+           display:grid;place-items:center;font-weight:700;font-size:13px}
+  .step b{display:block;font-size:14.5px}
+  .step span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+  .grade{display:grid;grid-template-columns:auto 1fr auto;gap:10px 14px;align-items:center;
+         background:#0f1c2e;border:1px solid var(--edge);border-radius:14px;padding:14px}
+  .grade .s{color:var(--gold);font-size:17px;letter-spacing:2px}
+  .grade .v{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+  .chain{font-size:23px;letter-spacing:5px;margin:2px 0 8px}
+  .four{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media (max-width:640px){.four{grid-template-columns:1fr}}
+  .ph{background:#0f1c2e;border:1px solid var(--edge);border-left-width:5px;border-radius:14px;padding:12px 14px}
+  .ph b{display:block;font-size:14.5px}
+  .ph span{font-size:12.5px;color:var(--muted)}
+  .callout{background:#12302c;border:1px solid #2c6b62;border-radius:14px;padding:13px 16px;margin:12px 0}
+  .callout b{color:var(--teal)}
+  @media (prefers-reduced-motion:reduce){.rc,#result.show,#info.show{animation:none}}
 </style>
 </head>
 <body>
@@ -121,6 +154,14 @@
       <div class="pill">⚡ <b id="energy">60</b><div class="bar"><i id="energyBar" style="width:100%"></i></div></div>
       <div class="pill">📡 pings <b id="pings">0</b></div>
       <div class="pill">🏆 best <b id="best">—</b></div>
+      <button class="icon-btn" id="howBtn" title="How to play" aria-label="How to play">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.6 2.7c-.6.2-.8.7-.8 1.3v.4"/><circle cx="12" cy="17.2" r=".9" fill="currentColor"/></svg>
+      </button>
+      <button class="icon-btn" id="sciBtn" title="What's actually happening" aria-label="The science">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6.2L4.6 17A2 2 0 0 0 6.3 20h11.4a2 2 0 0 0 1.7-3L15 9.2V3"/><path d="M8 3h8"/><path d="M7.4 14h9.2"/></svg>
+      </button>
     </div>
   </header>
 
@@ -180,6 +221,7 @@
 
 <div id="cards" aria-live="polite"></div>
 <div id="result"><div class="sheet" id="sheet"></div></div>
+<div id="info"><div class="doc" id="doc"></div></div>
 
 <script src="dataset.js"></script>
 <script src="memes.js"></script>
@@ -446,6 +488,142 @@ document.getElementById("memes").onclick=e=>{
 document.getElementById("clips").onclick=e=>{
   useClips=!useClips; e.target.textContent=useClips?"Clips: on":"Clips: off";
 };
+
+/* ---------- instruction pages ---------- */
+const HOW_TO_PLAY = `
+  <div class="kicker">Page 1 of 2 · the rules</div>
+  <h3>How to play</h3>
+  <p>A quantum magnet is hiding somewhere in this fog. Its behaviour changes depending on two dials, and
+  your job is to find the borders where one behaviour turns into another — using as few measurements as
+  you can get away with.</p>
+
+  <h4>The board</h4>
+  <p>Left to right is <b>frustration (κ)</b>: how badly the magnet is arguing with itself. Bottom to top
+  is <b>field strength (h)</b>: how hard an outside force is trying to scramble it. Every square on the
+  map is one setting of those two dials, and the magnet does something different in each.</p>
+
+  <div class="steps">
+    <div class="step"><div class="n">1</div><div><b>Scan the fog</b>
+      <span>Click anywhere to measure. The big dot shows how much neighbours agree; the little dot shows
+      how much next-door-but-one agree. That pair is the fingerprint of each phase.</span></div></div>
+    <div class="step"><div class="n">2</div><div><b>Choose your scan power</b>
+      <span>Weak costs ⚡1 and can be wildly wrong. Deep costs ⚡4 and is close to the truth. You start
+      with ⚡60 — that's about fifteen deep scans, or sixty cheap ones.</span></div></div>
+    <div class="step"><div class="n">3</div><div><b>Call the border</b>
+      <span>Drag the orange handles. Below the line you're claiming order, above it chaos. On the left
+      that means locked-together; on the right it means the striped pattern.</span></div></div>
+    <div class="step"><div class="n">4</div><div><b>Reveal</b>
+      <span>The true map appears and every square is checked against your call.</span></div></div>
+  </div>
+
+  <h4>How you win</h4>
+  <div class="grade">
+    <span class="s">★★★</span><span><b>Certified phase hunter.</b> Near-perfect border.</span><span class="v">95% and up</span>
+    <span class="s">★★☆</span><span>Solid. You found the shape, missed the detail.</span><span class="v">88 – 95%</span>
+    <span class="s">★☆☆</span><span>Roughly right, generously graded.</span><span class="v">75 – 88%</span>
+    <span class="s">☆☆☆</span><span>Bro took the scenic route.</span><span class="v">below 75%</span>
+  </div>
+  <p class="small" style="margin-top:10px">There's a second way to win: press <b>Send the AI</b> and it
+  plays the same map with the same budget, bisecting its way down each column. Beating its score is the
+  real flex, and the game tells you when you've done it.</p>
+
+  <h4>How you lose</h4>
+  <p>Energy runs out and you're still guessing. Weak scans are the usual culprit — they're cheap because
+  they lie, and a single bad reading near a border will drag your line to the wrong place. The other
+  classic is scanning only where it's obvious: the middle of a phase tells you nothing you didn't
+  already know. Spend where you think the border is.</p>
+
+  <div class="callout"><b>One honest caveat.</b> A thin drifting sliver (the floating phase) exists on the
+  right-hand side, and we don't ask you to draw it — it's too narrow to resolve at this size, so those
+  squares are left out of your score. Real physicists have the same problem.</div>
+
+  <div class="row"><button class="btn" id="closeDoc">Got it</button>
+    <button class="btn ghost" id="toSci">What's actually happening? →</button></div>`;
+
+const THE_SCIENCE = `
+  <div class="kicker">Page 2 of 2 · for the physicists in the room</div>
+  <h3>What's actually happening</h3>
+  <p>You are looking at the phase diagram of the <b>1D ANNNI model</b> — the axial next-nearest-neighbour
+  Ising chain — computed for real. Eight spins on a ring, ground states from
+  <b>H = −Σ Z<sub>i</sub>Z<sub>i+1</sub> + κ Σ Z<sub>i</sub>Z<sub>i+2</sub> − h Σ X<sub>i</sub></b>,
+  and every scan you take is sampled from those actual quantum states.</p>
+
+  <h4>Three forces walk into a spin chain</h4>
+  <p>Neighbours want to agree. Spins two apart want to <i>disagree</i> (that's κ, the frustration). And
+  the field h wants everyone undecided at once. Whichever argument wins decides the phase.</p>
+
+  <div class="four">
+    <div class="ph" style="border-left-color:#34C2B0"><b>Locked together</b>
+      <div class="chain">↑↑↑↑↑↑</div><span>Ferromagnetic. Neighbours win. ⟨Z·Z⟩ at distance 1 ≈ +1.</span></div>
+    <div class="ph" style="border-left-color:#9B7BD4"><b>Striped</b>
+      <div class="chain">↑↑↓↓↑↑</div><span>Antiphase. Frustration wins, in a period-4 pattern.
+      ⟨Z·Z⟩ at distance 2 ≈ −1.</span></div>
+    <div class="ph" style="border-left-color:#E08B45"><b>Scrambled</b>
+      <div class="chain">→←↑→↓←</div><span>Paramagnetic. The field wins; correlations collapse.</span></div>
+    <div class="ph" style="border-left-color:#5C9BD1"><b>Drifting</b>
+      <div class="chain">↑↑↓↑↓↓</div><span>Floating. Incommensurate, algebraically decaying, and very hard
+      to see on eight spins.</span></div>
+  </div>
+
+  <h4>Why your cheap scans lie</h4>
+  <p>A "scan" is what a real experiment does: prepare the state, measure every spin in the Z basis, and
+  average. Twenty shots gives you a noisy estimate of a correlator — the spread goes as σ/√shots, so
+  going from 20 to 500 shots only buys you a factor of five in precision. That trade is the whole
+  economy of quantum measurement, and now it's your ⚡ budget.</p>
+
+  <h4>Why the higher levels are blurry</h4>
+  <p>Levels 2 and 3 aren't a filter. We prepare each ground state with a variational circuit, then put a
+  <b>depolarizing channel after every CNOT</b> and simulate the whole thing as a density matrix
+  (PennyLane's <code>default.mixed</code>). At p = 0.05 each gate scrambles the target 5% of the time,
+  and the correlations you're trying to read fade with every gate that's run.</p>
+
+  <div class="callout"><b>Our result, which you can feel while playing.</b> Noise attenuates the order
+  parameters almost uniformly — so if you calibrate your decision rule on clean data and then apply it
+  to noisy data, the ordered phases appear to lose 39% of their area. Recalibrate on the noisy data and
+  the borders snap right back. Noise destroys the <i>scale</i> of the order parameter, not the
+  <i>location</i> of the transition. What it really costs you is shots.</div>
+
+  <p>The fragile one is the stripes: at p = 0.05 the antiphase order parameter loses 47% against the
+  ferromagnet's 40%, because it lives on a longer-range correlator and there's simply more distance for
+  the noise to eat.</p>
+
+  <h4>A trap we fell into</h4>
+  <p>The stripe pattern repeats every four sites, so on a <i>ring</i> it only fits when the ring length
+  is divisible by four. Our first full run used six spins; the antiphase was geometrically frustrated
+  out of existence, ⟨Z·Z⟩ at distance 2 reached only −0.33 instead of −0.99, and the classification
+  collapsed from 93% to 44%. An hour of compute, thrown away. If you extend this: N = 8 or 12, never 6
+  or 10.</p>
+
+  <p class="small">Full method, figures and code in the repository README. Every number above came out of
+  a script you can re-run.</p>
+
+  <div class="row"><button class="btn" id="closeDoc2">Back to the hunt</button>
+    <button class="btn ghost" id="toHow">← How to play</button></div>`;
+
+function openDoc(which){
+  document.getElementById("doc").innerHTML = which === "sci" ? THE_SCIENCE : HOW_TO_PLAY;
+  document.getElementById("info").classList.add("show");
+  const close=()=>document.getElementById("info").classList.remove("show");
+  const bind=(id,fn)=>{const el=document.getElementById(id); if(el) el.onclick=fn;};
+  bind("closeDoc",close); bind("closeDoc2",close);
+  bind("toSci",()=>openDoc("sci")); bind("toHow",()=>openDoc("how"));
+  document.getElementById("info").scrollTop=0;
+}
+document.getElementById("howBtn").onclick=()=>openDoc("how");
+document.getElementById("sciBtn").onclick=()=>openDoc("sci");
+document.getElementById("info").onclick=e=>{
+  if(e.target.id==="info") document.getElementById("info").classList.remove("show");
+};
+window.addEventListener("keydown",e=>{
+  if(e.key!=="Escape") return;
+  document.getElementById("info").classList.remove("show");
+  document.getElementById("result").classList.remove("show");
+});
+// first visit: show the rules once
+try{
+  if(!localStorage.getItem("ph_seen_rules")){ openDoc("how"); localStorage.setItem("ph_seen_rules","1"); }
+}catch(e){}
+
 document.getElementById("testMeme").onclick=()=>{
   const keys=Object.keys(CARDS); lastCard=0;
   react(keys[Math.floor(Math.random()*keys.length)],"preview");
