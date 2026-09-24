@@ -2,7 +2,7 @@
 
 **Team Popeyes (Lead): Tanish Singh Rajpal**
 
-Member: Paul Jeon
+Members: Paul Jeon, Sumedhaa Ruhil.
 
 Q-SITE 2026 · Quantum Coalition Scientific Track
 
