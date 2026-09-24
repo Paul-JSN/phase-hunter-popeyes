@@ -53,7 +53,7 @@
     </svg>`;
   }
   root.innerHTML = `
-    <h2>One magnet. Three maps.</h2>
+    <h2>Noise changes the phase map.</h2>
     <p class="lede">Noise weakens the measured correlations. A fixed classifier then draws a different map. How much can correction recover?</p>
     <div class="map-toolbar">
       <div class="map-legend" aria-label="Phase colors">
