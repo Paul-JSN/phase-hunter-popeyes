@@ -18,12 +18,14 @@ const context2d=new Proxy({measureText:()=>({width:30})},{get:(o,k)=>o[k]??(()=>
 function element(id){return elements[id]??=( {children:[],style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},appendChild(x){this.children.push(x)},remove(){},scrollIntoView(){},setAttribute(){},getContext:()=>context2d,width:720,height:560,addEventListener:(name,fn)=>{handlers[name]=fn},getBoundingClientRect:()=>({left:0,top:0,width:720,height:560})});}
 const timers=[];
 const scope={console,Math,Date,setTimeout:fn=>{timers.push(fn);return timers.length},localStorage:{getItem:()=>null,setItem(){}},document:{getElementById:element,createElement:()=>element(Math.random())},window:{addEventListener(){}}};
+scope.document.body=element('body');
 vm.createContext(scope);
 vm.runInContext(fs.readFileSync('game/dataset.js','utf8'),scope);
 vm.runInContext(fs.readFileSync('game/measurement.js','utf8'),scope);
 vm.runInContext(fs.readFileSync('game/memes.js','utf8'),scope);
 vm.runInContext(fs.readFileSync('game/popeye-memes.js','utf8'),scope);
 vm.runInContext(fs.readFileSync('game/famous-memes.js','utf8'),scope);
+vm.runInContext(fs.readFileSync('game/noise-comparison.js','utf8'),scope);
 let source=fs.readFileSync('game/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 vm.runInContext(source,scope);
 vm.runInContext('memesOn=false;',scope);
@@ -32,6 +34,23 @@ async function drain(){
   while(timers.length){timers.shift()();await Promise.resolve();}
 }
 async function main(){
+  assert.equal(read('firstVoyage'),true);
+  assert.equal(read('stage'),0);assert.equal(read('mode'),'practice');
+  assert.equal(elements.reveal.disabled,true);
+  elements.reveal.onclick();assert.equal(read('revealed'),false,'first round needs measurements');
+  read('shots=20;ping(kLo(),hLo());ping(kHi(),hHi());ping(kLo(),hHi())');
+  assert.equal(read('pings.every(p=>p.shots===100)'),true,'one scan strength in the opening');
+  assert.equal(elements.reveal.disabled,false);
+  elements.reveal.onclick();assert.equal(read('firstVoyage'),false);assert.equal(read('revealed'),true);
+  assert.match(elements.sheet.innerHTML,/resultCompare/);
+  elements.resultCompare.onclick();
+  assert.match(elements.doc.innerHTML,/not the state/);
+  assert.match(elements.shotResult.innerHTML,/93.7%/);
+  elements.noise01.onclick();assert.match(elements.shotResult.innerHTML,/worsens/);
+  elements.sample500.onclick();assert.match(elements.shotCost.textContent,/288,000/);
+  elements.tryNoisy.onclick();assert.equal(read('stage'),1);assert.equal(read('revealed'),false);
+  read('stage=0;newRound()');
+  console.log('First-voyage and comparison tests passed: scan gating, one power, unlock, noise/shot controls, and stage handoff.');
   const initial=read('JSON.stringify(view)');
   read('shots=20');
   const run=elements.agent.onclick();

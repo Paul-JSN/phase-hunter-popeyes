@@ -169,7 +169,7 @@
 </style>
 <link rel="stylesheet" href="popeye-theme.css?v=2">
 </head>
-<body>
+<body class="first-voyage">
 <div class="wrap">
   <header>
     <div class="logo">
@@ -198,12 +198,20 @@
     <div>
       <div class="crew-label">Team Popeyes presents · Q-SITE 2026</div>
       <h2>A little spinach.<br><em>A lot of quantum.</em></h2>
-      <p>Chart the hidden phases of a quantum magnet. Spend your scans wisely,<br class="desktop-break"> find the boundary, and see if you can outsmart the AI.</p>
+      <p>Find where a quantum magnet changes from ordered to scrambled.<br class="desktop-break"> Scan a few spots, draw your guess, then reveal the answer.</p>
     </div>
     <figure class="captain-portrait">
       <img src="assets/popeye/popeye.png" alt="Classic Popeye at the ship's wheel" width="170" height="170">
       <figcaption>All hands on deck</figcaption>
     </figure>
+  </section>
+  <section class="first-guide" id="firstGuide" aria-label="Your first round">
+    <div><div class="crew-label">Your first voyage · clean map · one scan strength</div>
+      <h2>Three moves. One hidden border.</h2>
+      <ol><li><b>1. Scan</b><span>Tap 3 spots in the fog. Try low and high.</span></li><li><b>2. Draw</b><span>Drag the orange dots between ORDER and CHAOS.</span></li><li><b>3. Reveal</b><span>See how much of the map you got right.</span></li></ol>
+      <p id="firstProgress" role="status" aria-live="polite">Tap the map to collect your first clue.</p>
+    </div>
+    <button class="text-button" id="skipIntro">Already know the game? Open all controls →</button>
   </section>
   <div class="route-label"><h2>Choose your waters</h2><span>Five stages · one scientific adventure</span></div>
   <div class="levels" id="levels" aria-label="Choose a stage"></div>
@@ -226,35 +234,37 @@
     </section>
 
     <aside>
-      <div class="card">
+      <div class="card advanced-control">
         <h2>Scan power</h2>
         <div class="seg" id="shots"></div>
         <div class="note" style="margin-top:9px">Weak scans fluctuate more. Deep scans cost four times as much and reduce sampling uncertainty; gate noise remains.</div>
       </div>
 
-      <div class="card">
+      <div class="card advanced-control">
         <h2>Mode</h2>
         <div class="modes" id="modes">
           <button data-mode="practice"><b>Practice</b><span>labels + hints</span></button>
           <button data-mode="hunter"><b>Hunter</b><span>no help</span></button>
         </div>
         <button class="btn ghost" id="tutorial">Start the tutorial</button>
+        <button class="btn ghost" id="replayIntro">Replay the simple demo</button>
       </div>
 
       <div class="card">
         <h2>Your call</h2>
         <button class="btn" id="reveal">Reveal &amp; score</button>
-        <div class="row">
+        <div class="row advanced-control">
           <button class="btn ghost" id="agent">Send the AI</button>
           <button class="btn ghost" id="reset">Retry same map</button>
         </div>
-        <button class="btn ghost" id="newMap">New map</button>
-        <button class="btn ghost" id="template" style="display:none">Start me with a V</button>
+        <button class="btn ghost advanced-control" id="newMap">New map</button>
+        <button class="btn ghost advanced-control" id="template" style="display:none">Start me with a V</button>
         <div class="note" id="agentNote" style="margin-top:9px">Drag the orange handles so the line
           splits the ordered regions from the chaotic one, then reveal.</div>
       </div>
 
-      <div class="card">
+      <details class="card scan-details">
+        <summary>How to read the scan colours</summary>
         <h2>Reading a scan</h2>
         <div class="scale">
           <div class="lab"><b>Outer disc</b> — do neighbours agree?</div>
@@ -276,9 +286,9 @@
         </div>
         <div class="note" style="margin-top:9px">Those two numbers are the whole fingerprint. Everything
           else on this screen is decoration.</div>
-      </div>
+      </details>
 
-      <div class="card">
+      <div class="card advanced-control">
         <h2>Map key</h2>
         <div class="legend">
           <div><i style="background:#34C2B0"></i>Locked together <span class="note">(ferromagnetic)</span></div>
@@ -289,7 +299,8 @@
         <div class="tech" id="tech"></div>
       </div>
 
-      <div class="card">
+      <details class="card reaction-settings">
+        <summary>Memes &amp; recordings</summary>
         <h2>Reactions</h2>
         <div class="row">
           <button class="btn ghost" id="memes" aria-pressed="true">Memes: on</button>
@@ -308,9 +319,13 @@
         <button class="btn ghost" id="popeyeGallery">Popeye: 3 stills, 13 captions</button>
         <div class="note" id="memeMode" style="margin-top:9px"></div>
         <div class="note" style="margin-top:7px">Popeye supplies fallback reactions. GIFs are silent; each reaction includes a bite-size lesson.</div>
-      </div>
+      </details>
     </aside>
   </main>
+  <section class="after-voyage" id="afterVoyage" hidden>
+    <div><h2>What happens when the quantum circuit gets noisy?</h2><p>Compare the same magnet three ways. Then try a noisy stage or race the AI.</p></div>
+    <button class="btn" id="compareNoise">Clean → noisy → recalibrated</button>
+  </section>
   <footer class="crew-footer"><b>TEAM POPEYES · STRONG TO THE FINISH</b>
     <span>Quantum Coalition Scientific Track · <a href="assets/popeye/CREDITS.md" target="_blank" rel="noopener">Cartoon credits</a></span>
   </footer>
@@ -325,6 +340,7 @@
 <script src="popeye-memes.js?v=classic-2"></script>
 <script src="famous-memes.js?v=2"></script>
 <script src="measurement.js"></script>
+<script src="noise-comparison.js"></script>
 <script>
 const PHASE = {FERRO:0, PARA:1, ANTI:2, FLOAT:3};
 const COLORS = ["#34C2B0","#E08B45","#9B7BD4","#5C9BD1"];
@@ -341,6 +357,9 @@ let best = Number(localStorage.getItem("ph_v2_best")||0) || null;
 let mode = localStorage.getItem("ph_mode") || "practice";
 let tutorial = 0, round = 0;
 let aiRunning=false, aiPreview=false, aiRunId=0, aiPlayerShots=100;
+let firstVoyage=localStorage.getItem('ph_first_voyage_done')!=='1';
+let borderMoved=false;
+if(firstVoyage) mode='practice';
 
 const st = () => data.stages[stage];
 const kLo = () => data.kappas[view.b0], kHi = () => data.kappas[view.b1];
@@ -352,6 +371,7 @@ const toH = y => hLo() + (canvas.height-PAD.b-y)/(canvas.height-PAD.t-PAD.b)*(hH
 
 function boot(d){
   data=d; buildUI(); syncMode(); newRound(); 
+  syncFirstVoyage();
   if(best) document.getElementById("best").textContent=best.toFixed(0)+"%";
 }
 
@@ -380,16 +400,45 @@ function newRound(){
     view.b0=span(0, n-1-wK); view.b1=view.b0+wK;
     view.a0=span(0, n-1-wH); view.a1=view.a0+wH;
   } while(++tries<40 && (orderedFraction(view)<0.18 || orderedFraction(view)>0.82));
+  if(firstVoyage) view={a0:0,a1:n-1,b0:0,b1:n-1};
   const mid=(hLo()+hHi())/2;
   handles=[...Array(HANDLES)].map((_,i)=>({t:i/(HANDLES-1), h:mid}));
   energy = mode==="practice" ? 90 : 60;
   pings=[]; revealed=false; cheapPings=0; agentScore=null; lastAttempt=null;
+  borderMoved=false;
   document.getElementById("agentNote").textContent =
     "Drag the five handles so the line splits order from chaos, then reveal.";
   document.getElementById("hint").classList.remove("gone");
   document.getElementById("roundTag").textContent = `round ${round} · κ ${kLo().toFixed(2)}–${kHi().toFixed(2)} · h ${hLo().toFixed(2)}–${hHi().toFixed(2)}`;
-  syncButtons(); hud(); draw();
+  syncButtons(); hud(); draw(); syncFirstVoyage();
 }
+
+function syncFirstVoyage(){
+  document.body.classList.toggle('first-voyage',firstVoyage);
+  document.getElementById('firstGuide').hidden=!firstVoyage;
+  document.getElementById('afterVoyage').hidden=firstVoyage;
+  if(!firstVoyage) return;
+  document.getElementById('firstProgress').textContent=pings.length<3
+    ? `Scan ${pings.length}/3 · tap different spots, including low and high on the map.`
+    : borderMoved ? 'Your border is ready. Reveal the map to check your guess.'
+    : 'Clues collected! Drag the orange dots: ORDER below your line, CHAOS above. Then reveal.';
+  document.getElementById('reveal').disabled=pings.length<3;
+  document.getElementById('reveal').textContent=pings.length<3?`Scan ${3-pings.length} more spot${pings.length===2?'':'s'} first`:'Reveal my map';
+  document.getElementById('agentNote').textContent='Every tap uses the same scan strength. ORDER means a pattern; CHAOS means scrambled. EDGE? means uncertain.';
+}
+function finishFirstVoyage(){
+  firstVoyage=false;
+  try{localStorage.setItem('ph_first_voyage_done','1');}catch(e){}
+  document.getElementById('reveal').textContent='Reveal & score';
+  document.getElementById('agentNote').textContent='Drag the orange handles between ORDER and CHAOS, then reveal. Scan power and the AI are now available.';
+  syncAgentControls();syncFirstVoyage();
+}
+document.getElementById('skipIntro').onclick=finishFirstVoyage;
+document.getElementById('replayIntro').onclick=()=>{
+  firstVoyage=true;stage=0;mode='practice';shots=100;stopTutorial();hideResult();
+  try{localStorage.setItem('ph_first_voyage_done','0');}catch(e){}
+  syncMode();newRound();document.getElementById('firstGuide').scrollIntoView({block:'start'});
+};
 
 function buildUI(){
   const box=document.getElementById("levels");
@@ -454,6 +503,7 @@ function art(id){
 }
 function react(id, detail, preview=false, important=false){
   if(!memesOn||!CARDS[id]) return;
+  if(firstVoyage&&!preview&&id!=='first_ping'&&id!=='tutorial_milestone') return;
   const now=Date.now(); if(!preview&&!important&&now-lastCard<3500) return; lastCard=now;
   const lesson=reactionLesson(id);
   if(!preview) id=chooseReaction(id);
@@ -480,6 +530,7 @@ function contradicts(r){
 
 function ping(k,h,cost=true,automated=false){
   if(revealed || ((aiRunning||aiPreview)&&!automated)) return null;
+  if(firstVoyage&&!automated) shots=100;
   if(cost && energy<COST[shots]) { react("broke",`${pings.length} scans spent`); return null; }
   const a=nearestIndex(data.hs,h,view.a0,view.a1), b=nearestIndex(data.kappas,k,view.b0,view.b1), sg=st();
   const sampled=Measurement.sample(sg.readout[a][b],sg.outcomes,shots);
@@ -500,7 +551,7 @@ function ping(k,h,cost=true,automated=false){
     else if(tutorial===2 && r.h > hLo()+0.7*(hHi()-hLo())) step(3);
     }
   }
-  hud(); return r;
+  hud(); syncFirstVoyage(); return r;
 }
 
 /* ---------- the player's border ---------- */
@@ -596,7 +647,7 @@ canvas.addEventListener("pointerdown",e=>{
 canvas.addEventListener("pointermove",e=>{
   if(!drag || revealed || aiRunning || aiPreview) return;
   const r=canvas.getBoundingClientRect();
-  drag.h=Math.max(hLo(),Math.min(hHi(),toH((e.clientY-r.top)*canvas.height/r.height))); draw();
+  drag.h=Math.max(hLo(),Math.min(hHi(),toH((e.clientY-r.top)*canvas.height/r.height))); borderMoved=true; draw(); syncFirstVoyage();
 });
 window.addEventListener("pointerup",()=>{ if(drag&&tutorial===3) step(4); drag=null; });
 
@@ -620,12 +671,14 @@ function showResult(id, s){
       ${agentScore!==null?`<span class="chip">AI <b>${(agentScore*100).toFixed(1)}%</b></span>`:""}
       ${best?`<span class="chip">best <b>${best.toFixed(1)}%</b></span>`:""}
     </div>
+    <button class="btn" id="resultCompare">Why noise changes the map →</button>
     <div class="row">
       <button class="btn" id="again">New map, same stage</button>
       ${stage<data.stages.length-1?`<button class="btn ghost" id="next">Next stage →</button>`:""}
       <button class="btn ghost" id="close">Look at the map</button>
     </div>`;
   document.getElementById("result").classList.add("show");
+  document.getElementById('resultCompare').onclick=()=>{hideResult();openComparison();};
   document.getElementById("again").onclick=()=>{hideResult(); newRound();};
   document.getElementById("close").onclick=hideResult;
   const next=document.getElementById("next");
@@ -637,6 +690,8 @@ function hideResult(){ document.getElementById("result").classList.remove("show"
 
 document.getElementById("reveal").onclick=()=>{
   if(revealed || aiRunning || aiPreview) return;
+  if(firstVoyage&&pings.length<3) return;
+  if(firstVoyage) finishFirstVoyage();
   drag=null;
   if(tutorial) stopTutorial();
   revealed=true; draw();
@@ -892,6 +947,7 @@ const THE_SCIENCE = `
 
 
 function openDoc(which){
+  document.getElementById('doc').classList.remove('comparison-doc');
   document.getElementById("doc").innerHTML = which === "sci" ? THE_SCIENCE : HOW_TO_PLAY;
   document.getElementById("info").classList.add("show");
   const close=()=>document.getElementById("info").classList.remove("show");
@@ -902,6 +958,70 @@ function openDoc(which){
 }
 document.getElementById("howBtn").onclick=()=>openDoc("how");
 document.getElementById("sciBtn").onclick=()=>openDoc("sci");
+let comparisonNoise='0.05',comparisonShots='20';
+function openComparison(){
+  const comparison=window.NOISE_COMPARISON;
+  if(!comparison) return;
+  document.getElementById('cards').innerHTML='';
+  const doc=document.getElementById('doc');doc.classList.add('comparison-doc');
+  doc.innerHTML=`<div class="comparison-top"><div><div class="kicker">Same magnet · same circuit · three interpretations</div>
+    <h3>Noise blurs the clues.</h3></div><button class="btn ghost" id="closeComparison">Back to the game</button></div>
+    <p>A magnet can line up, form stripes, or lose its pattern. We infer those phases from measured spin correlations.</p>
+    <div class="comparison-switch" role="group" aria-label="Gate noise"><span>Gate noise</span><button id="noise01">1%</button><button id="noise05">5%</button></div>
+    <div class="comparison-maps">
+      <figure><figcaption><b>1. Clean</b><span>No gate noise. Learn the reference rule.</span></figcaption><canvas id="mapClean" width="360" height="290" role="img" aria-label="Noiseless reference phase map"></canvas><p id="areaClean"></p></figure>
+      <figure><figcaption><b>2. Noisy</b><span>Weaker signals, same reference rule.</span></figcaption><canvas id="mapNoisy" width="360" height="290" role="img" aria-label="Noisy phase map classified with the fixed clean rule"></canvas><p id="areaNoisy"></p></figure>
+      <figure><figcaption><b>3. Recalibrated</b><span>Learn a rule from the noisy signals.</span></figcaption><canvas id="mapRecal" width="360" height="290" role="img" aria-label="Same noisy phase map after recalibrating the classifier"></canvas><p id="areaRecal"></p></figure>
+    </div>
+    <div class="comparison-legend"><span><i style="background:#34C2B0"></i>Aligned / ferromagnetic</span><span><i style="background:#9B7BD4"></i>Striped / antiphase</span><span><i style="background:#E08B45"></i>Scrambled / paramagnetic</span></div>
+    <p class="small">All three maps use the same axes and expected signals from the same prepared N=8 circuits. “Clean” means p=0, not an exact ground state. Colours are inferred labels.</p>
+    <div class="callout"><b>We changed the interpretation, not the state.</b> Recalibration moves the classifier’s decision regions. It cannot undo gate errors or restore lost quantum information.</div>
+    <details class="comparison-explain"><summary>Why do the phases respond differently?</summary>
+      <p>Aligned spins have strong neighbour agreement. Stripes have a strong alternating pattern at distance two. Depolarizing errors weaken these correlations; a rule expecting strong signals can mistake order for disorder.</p>
+      <p id="phaseLoss"></p>
+      <p class="small">The amount of attenuation depends on the state, observable and circuit. These measurements do not isolate distance as the cause of the difference. Small signals in the paramagnetic region also make relative percentage changes less informative.</p>
+    </details>
+    <section class="shot-experiment"><h4>Does it still help with fewer shots?</h4>
+      <p>One shot reads the whole register. Both methods use the <b>same observations</b>; recalibration gets no extra shots.</p>
+      <div class="comparison-switch" role="group" aria-label="Shots per map point"><span>Shots per point</span><button id="sample20">20</button><button id="sample100">100</button><button id="sample500">500</button></div>
+      <div id="shotResult" role="status" aria-live="polite"></div>
+      <p class="small">Results average 200 independent simulations. Score: agreement with the noiseless circuit’s labels, excluding reference floating cells. Recalibration fits this entire measured map without labels; this is not a test on a separate unseen map. The maps above show expected signals, not a single finite-shot draw.</p>
+      <details><summary>Measurement cost and uncertainty</summary><p id="shotCost"></p><p class="small">The fixed rule starts with noiseless simulation centroids. Both methods receive a full 24 × 24 scan, so this is a different experiment from finding a boundary with a few game pings. Reported uncertainty is the standard error of the mean gain from paired runs.</p></details>
+    </section>
+    <div class="row"><button class="btn" id="tryNoisy">Try this noisy stage →</button><button class="btn ghost" id="comparisonScience">Read the full science</button></div>`;
+  document.getElementById('closeComparison').onclick=()=>document.getElementById('info').classList.remove('show');
+  document.getElementById('comparisonScience').onclick=()=>openDoc('sci');
+  document.getElementById('tryNoisy').onclick=()=>{document.getElementById('info').classList.remove('show');finishFirstVoyage();stage=comparisonNoise==='0.01'?1:2;newRound();document.getElementById('board').scrollIntoView({block:'center'});};
+  for(const [id,value] of [['noise01','0.01'],['noise05','0.05']])document.getElementById(id).onclick=()=>{comparisonNoise=value;renderComparison();};
+  for(const value of ['20','100','500'])document.getElementById('sample'+value).onclick=()=>{comparisonShots=value;renderComparison();};
+  renderComparison();document.getElementById('info').classList.add('show');document.getElementById('info').scrollTop=0;
+}
+function renderComparison(){
+  const d=window.NOISE_COMPARISON,m=d.maps[comparisonNoise];
+  function map(id,labels,areaId){
+    const c=document.getElementById(id),g=c.getContext('2d'),left=37,top=12,w=308,h=238;
+    g.clearRect(0,0,c.width,c.height);
+    for(let a=0;a<labels.length;a++)for(let b=0;b<labels[a].length;b++){
+      g.fillStyle=COLORS[labels[a][b]];g.fillRect(left+b*w/24,top+(23-a)*h/24,w/24+.2,h/24+.2);
+    }
+    g.fillStyle='#e8eee7';g.font='12px system-ui';g.textAlign='center';
+    for(const x of [0,.5,1])g.fillText(x.toFixed(1),left+x*w,top+h+17);
+    g.fillText('Frustration κ',left+w/2,top+h+35);g.textAlign='right';
+    for(const y of [0,1,2])g.fillText(String(y),left-9,top+h-y*h/2+4);
+    g.save();g.translate(11,top+h/2);g.rotate(-Math.PI/2);g.textAlign='center';g.fillText('Field h',0,0);g.restore();
+    const ordered=labels.flat().filter(x=>x===0||x===2).length/(24*24);
+    document.getElementById(areaId).textContent=`${(ordered*100).toFixed(1)}% of the map labelled ordered`;
+  }
+  map('mapClean',d.clean,'areaClean');map('mapNoisy',m.fixed,'areaNoisy');map('mapRecal',m.recalibrated,'areaRecal');
+  for(const [id,value] of [['noise01','0.01'],['noise05','0.05']])document.getElementById(id).setAttribute('aria-pressed',String(comparisonNoise===value));
+  for(const value of ['20','100','500'])document.getElementById('sample'+value).setAttribute('aria-pressed',String(comparisonShots===value));
+  const loss=key=>(100*d.decay[key]['relative_loss_p'+comparisonNoise]).toFixed(0);
+  document.getElementById('phaseLoss').textContent=`At ${Number(comparisonNoise)*100}% noise, our selected phase interiors lose about ${loss('ferromagnetic')}% of the aligned-phase signal and ${loss('antiphase')}% of the striped-phase signal. That is an observed difference in this circuit, not a universal ranking of fragile phases.`;
+  const row=d.study.noise[comparisonNoise][comparisonShots],gain=100*row.paired_gain.mean;
+  document.getElementById('shotResult').innerHTML=`<div class="shot-scores"><div><span>Fixed rule</span><b>${(100*row.fixed.mean).toFixed(1)}%</b></div><div><span>Recalibrated</span><b>${(100*row.recalibrated.mean).toFixed(1)}%</b></div><div><span>Change</span><b>${gain>=0?'+':''}${gain.toFixed(2)} pp</b></div></div><p>${gain>=0?'Recalibration improves mean agreement here.':'Here, recalibration slightly worsens mean agreement. With weak noise and few shots, refitting can add more uncertainty than it removes.'}</p>`;
+  document.getElementById('shotCost').textContent=`${Number(comparisonShots)} × 576 points = ${row.total_shots.toLocaleString()} whole-register shots per method per run. Paired mean gain: ${gain.toFixed(2)} percentage points; standard error ${ (100*row.paired_gain.standard_error).toFixed(3)} percentage points. No hardware was used.`;
+}
+document.getElementById('compareNoise').onclick=openComparison;
 document.getElementById("info").onclick=e=>{
   if(e.target.id==="info") document.getElementById("info").classList.remove("show");
 };
@@ -910,7 +1030,7 @@ window.addEventListener("keydown",e=>{
   document.getElementById("info").classList.remove("show");
   document.getElementById("result").classList.remove("show");
 });
-try{ if(!localStorage.getItem("ph_seen_rules")){ openDoc("how"); localStorage.setItem("ph_seen_rules","1"); } }catch(e){}
+// The first round teaches through play; help remains available on demand.
 
 const STEPS = [ null,
   {b:"Scan low in this window", s:"Click near the bottom of the board. Deep in an ordered region the disc goes bright or the centre goes red."},

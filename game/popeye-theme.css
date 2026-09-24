@@ -113,3 +113,35 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none!important;filter:n
 .meme-gallery a,.doc a{color:#cce5a9}
 #cards{z-index:75}
 @media(max-width:640px){.meme-gallery{grid-template-columns:1fr}.rc .txt .meme-lesson{font-size:11px}.meme-credit{font-size:7px}}
+
+/* First encounter: one map, one power, a short playable explanation. */
+[hidden]{display:none!important}
+.first-voyage .advanced-control,.first-voyage .route-label,.first-voyage #levels,.first-voyage .scan-details,
+.first-voyage .hud .pill:first-child,.first-voyage .hud .pill:nth-child(3),.first-voyage #roundTag{display:none!important}
+.first-voyage .voyage-banner{padding:12px 22px;grid-template-columns:1fr 65px;min-height:0;margin-bottom:14px}
+.first-voyage .voyage-banner h2{font-size:22px;line-height:1.15;margin:0}
+.first-voyage .voyage-banner h2 br{display:none}
+.first-voyage .voyage-banner h2 em{margin-left:6px}
+.first-voyage .voyage-banner p,.first-voyage .voyage-banner .crew-label,.first-voyage .captain-portrait figcaption{display:none}
+.first-voyage .captain-portrait{width:60px;height:60px;border-width:3px;margin:0}
+.first-guide{background:#fff8e7;color:var(--navy);padding:18px 22px;border:1px solid #c5bda6;border-radius:10px;margin-bottom:16px}
+.first-guide h2{font-size:25px;margin:3px 0 12px;line-height:1.2}
+.first-guide .crew-label{color:#4d653b}
+.first-guide ol{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);padding:0;margin:0;gap:20px}
+.first-guide li b,.first-guide li span{display:block}.first-guide li b{font-size:16px}.first-guide li span{font-size:13px;margin-top:3px}
+.first-guide p{margin:13px 0 4px;font-weight:600;font-size:13px;color:#385d40}
+.text-button{border:0;background:none;padding:4px 0;color:#52666a;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit;font-size:12px}
+details.card summary{cursor:pointer;font-weight:600;font-size:13px}details.card[open] summary{margin-bottom:16px}
+.after-voyage{display:flex;align-items:center;gap:22px;justify-content:space-between;background:#fff8e7;color:var(--navy);padding:22px;border:1px solid #c5bda6;border-radius:10px;margin-top:22px}
+.after-voyage h2{margin:0;font-size:20px}.after-voyage p{margin:6px 0 0;font-size:13px}.after-voyage .btn{width:auto;flex-shrink:0}
+.doc.comparison-doc{max-width:1140px}.comparison-top{display:flex;gap:20px;align-items:center;justify-content:space-between}.comparison-top .btn{width:auto;margin:0;flex-shrink:0}
+.comparison-switch{display:flex;gap:8px;align-items:center;margin:16px 0;flex-wrap:wrap}.comparison-switch span{margin-right:8px;font-size:13px}
+.comparison-switch button{font:inherit;cursor:pointer;border:1px solid #738976;border-radius:6px;padding:7px 17px;background:#102d3e;color:#f5ecd7}
+.comparison-switch button[aria-pressed=true]{background:#42673f;border-color:#c4de9f}
+.comparison-maps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.comparison-maps figure{margin:0;padding:12px;background:#102d3e;border:1px solid #456371;border-radius:8px}
+.comparison-maps figcaption b,.comparison-maps figcaption span{display:block}.comparison-maps figcaption b{font-size:17px}.comparison-maps figcaption span{font-size:12px;color:#bdcdd0;min-height:36px}
+.comparison-maps canvas{background:transparent;cursor:default;touch-action:auto}.comparison-maps p{font-size:12px;text-align:center;margin:5px 0 0}
+.comparison-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin:12px 0}.comparison-legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px}
+.comparison-explain{margin:15px 0;padding:13px;border:1px solid #456371;border-radius:7px}.comparison-explain summary,.shot-experiment summary{cursor:pointer;font-weight:600}.comparison-explain[open] summary{margin-bottom:12px}
+.shot-experiment{border-top:1px solid #456371;margin-top:20px}.shot-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}.shot-scores div{background:#102d3e;border:1px solid #456371;border-radius:7px;padding:12px}.shot-scores b,.shot-scores span{display:block}.shot-scores b{font-size:28px;color:#c7e1a7}.shot-scores span{font-size:12px;color:#bdcdd0}
+@media(max-width:720px){.comparison-maps{grid-template-columns:1fr}.comparison-maps figure{max-width:480px;width:100%;margin:auto}.comparison-top{align-items:flex-start;flex-direction:column}.after-voyage{display:block}.after-voyage .btn{width:100%}.first-guide{padding:14px}.first-guide h2{font-size:21px}.first-guide ol{gap:8px}.first-guide li span{font-size:11px}.first-guide li b{font-size:14px}.shot-scores b{font-size:22px}.first-voyage .voyage-banner h2{font-size:18px}}

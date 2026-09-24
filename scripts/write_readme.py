@@ -5,7 +5,8 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
  load=lambda name:json.loads((ROOT/'data'/name).read_text())
  clean=load('summary.json');noise=load('noise_analysis.json');size=load('commensuration.json')
- budget=load('budget_study.json');large=load('large_n_cut_analysis.json');second=load('second_method.json');readout=load('readout_validation.json')
+ budget=load('budget_study.json');large=load('large_n_cut_analysis.json');second=load('second_method.json');readout=load('readout_validation.json');finite=load('finite_shot_recalibration.json')
+ finite_rows='\n'.join(f"| {p} | {shots} | {100*r['fixed']['mean']:.2f}% | {100*r['recalibrated']['mean']:.2f}% | {100*r['paired_gain']['mean']:+.2f} ± {100*r['paired_gain']['standard_error']:.3f} pp |" for p,rows in finite['noise'].items() for shots,r in rows.items())
  stages=['Clear skies','Static','Whiteout'];methods=['random','grid','bisect','adaptive']
  sizes='\n'.join(f"| {r['qubits']} | {'Yes' if r['period_four_fits'] else 'No'} | {r['zz2']:.3f} | {100*r['agreement_excluding_floating']:.1f}% |" for r in size['rows'])
  areas='\n'.join(f"| {p} | {100*r['fixed_rule']['ordered']:.2f}% | {100*r['recalibrated']['ordered']:.2f}% |" for p,r in noise['phase_areas'].items())
@@ -29,7 +30,9 @@ Carnegie Mellon University, Information Networking Institute
 
 ![Phase Hunter nautical interface with measured points and an educational reaction](figures/gameplay.png)
 
-The game exposes a real inference problem: how much can you learn about a quantum magnet from a small number of noisy measurements? Drag five boundary handles, reveal your map score, and retry the same map to improve your strategy. No build step or account is needed.
+The first round is **Scan → Draw → Reveal**: one clean map, one scan strength, three clues before revealing. Stage choices, shot strengths and the AI appear after the first reveal; experienced players can skip ahead. Memes remain optional. No build step or account is needed.
+
+After revealing, select **Why noise changes the map** for an interactive clean/noisy/recalibrated comparison and the finite-shot experiment below. Returning players can choose **Replay the simple demo**.
 
 <details>
 <summary>Watch a current gameplay recording</summary>
@@ -96,6 +99,10 @@ The N=6 result is finite-ring frustration and a limitation of this correlation-b
 
 ## Gate noise: signal attenuation versus classification
 
+![The same prepared circuit: clean, noisy with the fixed rule, and recalibrated](figures/noise_comparison.png)
+
+The three maps share axes and phase colours. “Clean” here means the same variational state without gate noise, not an exact ground state. **Recalibration changes the inferred labels; it does not repair the quantum state.**
+
 The saved 24×24 N=8 scan fits a four-layer RY/RZ and CNOT-ring ansatz on `default.qubit`. Identical parameters are evaluated on `default.mixed` at p=0, 0.01 and 0.05. A target `DepolarizingChannel(p)` follows every CNOT. Keeping the prepared state fixed across noise strengths separates channel effects from preparation differences within each point.
 
 | Noise p | Ordered area: fixed clean rule | Ordered area: recalibrated rule |
@@ -109,6 +116,24 @@ A fixed classifier labels about **39% less area as ordered at p=0.05**. Recalibr
 The selected antiphase interior loses about 47% of its order parameter versus 40% for the ferromagnetic interior. This is an empirical circuit-dependent comparison; distance alone is not isolated as its cause.
 
 Preparation remains imperfect: mean energy error **{quality['energy_error_mean']:.3f}**, maximum **{quality['energy_error_max']:.3f}**, and **{quality['points_above_0_05']}/576** points above 0.05. Mean correlator errors versus exact states are 0.027 and 0.042. Future scans retain the better warm/cold fit and save parameters; the archived expectation values used here remain unchanged.
+
+### Does recalibration survive limited shots?
+
+We tested **20, 100 and 500 whole-register shots per point**, at p=0.01 and 0.05, over **200 seeds**. Each paired comparison uses exactly the same noisy observations. The fixed rule starts with centroids from noiseless simulations; recalibration learns centroids from that same measured map, with no extra quantum shots and no target labels.
+
+| Gate noise p | Shots/point | Fixed-rule agreement | Recalibrated agreement | Paired gain ± standard error |
+|---:|---:|---:|---:|---:|
+{finite_rows}
+
+At 5% noise, recalibration helps even at 20 shots per point. At 1% noise, it slightly **hurts** at 20 and 100 shots: refitting can introduce uncertainty when the original rule already works well. The result supports conditional usefulness, not automatic improvement.
+
+![Finite-shot recalibration with standard-deviation error bars](figures/finite_shot_recalibration.png)
+
+Scores compare against the noiseless labels of the **same prepared circuit**, with reference floating cells excluded. They measure recovery of an inferred map, not accuracy against exact thermodynamic phases. Error bars show one standard deviation across runs; the table reports standard errors of paired mean gains.
+
+Each full 24×24 map costs **11,520 / 57,600 / 288,000** shots at these three settings. This is separate from the sparse game-ping budget study. Recalibration is transductive: it fits the map being scored, without labels. Generalization to a separate map, hardware noise and finite-shot zero-noise extrapolation remain untested.
+
+[Results and protocol](data/finite_shot_recalibration.json) · `python scripts/finite_shot_recalibration.py`.
 
 ## Whole-register shots: use all the information
 
@@ -190,6 +215,8 @@ Five stages cover clean N=8, N=8 with 1% or 5% gate noise, frustrated clean N=6,
 
 Practice supplies labels and 90 energy; Hunter removes hints and supplies 60. Weak/solid/deep scans cost 1/2/4 energy for 20/100/500 shots. The AI spends the same energy on the same map: 45 solid scans in Practice or 30 in Hunter. Its scans animate and remain visible until **Your turn — same map** restores the player's budget. Retry preserves the target; New map clears it.
 
+The introductory round fixes Practice mode and 100 shots per scan. It teaches with on-map ORDER/CHAOS labels and only one early reaction, then unlocks the full game after reveal. Detailed colour keys and meme settings are expandable. The comparison screen offers 1%/5% noise and 20/100/500-shot result selectors, plus an explicit explanation of what recalibration does.
+
 The nautical theme uses chart paper, navy controls, sailor-red actions and spinach-green selections. Phase colors retain their scientific meaning.
 
 **Personal memes** and **Famous meme GIFs** have independent switches. Both default on, alternating where both fit. Twelve GIFs and twenty-seven contextual captions attach short lessons to meaningful events. SUIII celebrates measured three-star results or AI wins; a no-scan reveal gets confused Travolta. Common events rotate through variants. Popeye supplies three fallback stills with thirteen captions.
@@ -213,6 +240,7 @@ python scripts/run_pennylane.py --check --qubits 8
 python scripts/make_stages.py
 python scripts/analyse_size.py
 python scripts/analyse_noise.py --qubits 8
+python scripts/finite_shot_recalibration.py
 python scripts/budget_study.py
 python scripts/second_method.py
 python scripts/large_n_cut.py --analyse-only
@@ -247,7 +275,7 @@ The recorder uses stable control IDs and measured element bounds, validates non-
 
 Tests cover joint sampling means/variance/covariance, exact budgets, ring-size bounds, basis-invariant fidelity, better-fit persistence, visible AI progress, same-map handoff, reaction switches and victory conditions.
 
-Remaining limitations: unresolved floating phase; finite-ring and VQE bias; heuristic inference rules; sparse larger-system cuts; no finite-shot mitigation experiment; no hardware run or quantum advantage. The presentation video remains to be recorded.
+Remaining limitations: unresolved floating phase; finite-ring and VQE bias; heuristic inference rules; sparse larger-system cuts; no finite-shot zero-noise-extrapolation experiment or held-out calibration transfer; no hardware run or quantum advantage. The presentation video remains to be recorded.
 
 ## Sources
 

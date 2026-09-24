@@ -75,6 +75,22 @@ print('Cut near kappa=.30:',noise['boundary_cuts']['kappa=0.30'])
 show_figure('phase_diagrams_noise.png')
 show_figure('noise_analysis.png')
 ''')
+section('''### Clean → noisy → recalibrated
+These maps use identical axes and colours. The clean baseline is the same prepared circuit at p=0. Recalibration changes inferred labels, not the quantum state; it cannot restore lost quantum information.''','''show_figure('noise_comparison.png')
+''')
+section('''### Finite-shot recalibration: a paired test
+At each point, sample 20, 100 or 500 joint whole-register outcomes. Both classifiers receive exactly the same noisy observations. The fixed rule uses precomputed noiseless centroids; the recalibrated rule fits the observed map without target labels or extra shots. We repeat at 1% and 5% noise for 200 seeds and score against the same prepared circuit's noiseless labels, excluding reference floating cells.
+
+This tests transductive inference on the full measured map, not calibration transfer to an unseen map, exact-ground-state recovery, or zero-noise extrapolation. Each run costs shots-per-point × 576, so it is not the sparse-ping budget experiment.''','''finite=load('finite_shot_recalibration.json')
+assert finite['seeds']==200
+for p,rows in finite['noise'].items():
+    for shots,row in rows.items():
+        assert row['total_shots']==int(shots)*576
+        assert np.isclose(row['paired_gain']['mean'],row['recalibrated']['mean']-row['fixed']['mean'])
+        print(f"p={p}, {shots} shots/point: fixed {row['fixed']['mean']:.2%}, recalibrated {row['recalibrated']['mean']:.2%}; gain {100*row['paired_gain']['mean']:+.2f} pp, SE {100*row['paired_gain']['standard_error']:.3f} pp")
+show_figure('finite_shot_recalibration.png')
+print('At 5% noise recalibration helps even at 20 shots; at 1% it slightly hurts at 20/100 shots. More flexible fitting is not automatically better.')
+''')
 section('''## 6. What a shot actually measures
 Both observables are diagonal in Z. One register readout supplies both site-averaged correlators. All shots contribute to both estimates, with covariance retained. Bitstrings with identical (C1,C2) are grouped losslessly into joint categories. Draw multinomial counts over these categories, not two independent binomials and not an unbounded Gaussian.
 
@@ -159,7 +175,7 @@ For each cut, fit a single attenuation factor α minimizing the squared differen
               'fixed shift',row['shift_fixed'],'rescaled shift',row['shift_rescaled'])
 ''')
 section('''## 11. The experiment as a game
-The nautical UI presents scans as a fog map. Practice and Hunter have 90 and 60 energy; 20/100/500 shots cost 1/2/4 energy. The visible AI uses the same map and energy, with five-handle bisection rather than the study's reconstruction. Scores describe map agreement. Twelve famous GIFs and optional personal reactions attach short lessons to observable actions; no hidden true phase is leaked before reveal.''','''show_figure('gameplay.png')
+The opening teaches Scan → Draw → Reveal with one clean map, one scan strength, and three clues before revealing. The full controls unlock after reveal, alongside an interactive clean/noisy/recalibrated comparison. Experienced players can skip ahead or replay the simple demo. Practice and Hunter have 90 and 60 energy; 20/100/500 shots cost 1/2/4 energy. The AI uses the same map and energy, with five-handle bisection rather than the study's reconstruction. Twelve famous GIFs and preserved personal recordings remain optional.''','''show_figure('gameplay.png')
 data=json.loads((ROOT/'game/dataset.json').read_text())
 print('Game protocol:',data['measurement_protocol'])
 print('Stages:',[(s['id'],s['qubits'],s['p']) for s in data['stages']])
