@@ -44,7 +44,7 @@
   @media (max-width:900px){main{grid-template-columns:1fr}}
   .stage{position:relative;background:var(--panel);border:1px solid var(--edge);border-radius:20px;
          padding:14px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
-  canvas{width:100%;height:auto;display:block;border-radius:14px;background:#050B15;touch-action:none;cursor:crosshair}
+  #board{width:100%;height:auto;aspect-ratio:9/7;min-height:340px;display:block;border-radius:14px;background:#050B15;touch-action:none;cursor:crosshair}
   .hint{position:absolute;left:50%;transform:translateX(-50%);bottom:56px;font-size:12.5px;color:#BCD3E4;
         background:rgba(7,14,26,.85);padding:8px 14px;border-radius:999px;pointer-events:none;
         transition:opacity .4s;border:1px solid var(--edge)}
@@ -168,9 +168,10 @@
   @media (prefers-reduced-motion:reduce){.rc,#result.show,#info.show{animation:none}}
 </style>
 <link rel="stylesheet" href="popeye-theme.css?v=2">
+<link rel="stylesheet" href="comparison.css?v=1">
 </head>
 <body>
-<div class="wrap">
+<div class="wrap" id="app">
   <header>
     <div class="logo">
       <svg class="crew-mark" viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
@@ -179,9 +180,10 @@
       <div><h1>Phase Hunter</h1><small>Team Popeyes · Quantum explorers</small></div>
     </div>
     <div class="hud">
-      <div class="pill">⚡ <b id="energy">60</b><div class="bar"><i id="energyBar" style="width:100%"></i></div></div>
+      <div class="pill energy-hud">⚡ <b id="energy">60</b><div class="bar"><i id="energyBar" style="width:100%"></i></div></div>
       <div class="pill">📡 pings <b id="pings">0</b></div>
-      <div class="pill">🏆 best <b id="best">—</b></div>
+      <div class="pill shot-hud"><b id="totalShots">0</b><span>shots used</span></div>
+      <div class="pill best-hud">🏆 best <b id="best">—</b></div>
       <div class="pill" id="roundTag" style="font-size:11.5px;color:var(--muted)">round 1</div>
       <button class="icon-btn" id="howBtn" title="How to play" aria-label="How to play">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
@@ -193,7 +195,19 @@
       </button>
     </div>
   </header>
-
+  <nav class="view-nav" aria-label="Experiment views">
+    <div class="view-switch">
+      <button type="button" id="playView" aria-pressed="true" aria-controls="gameView">Play the map</button>
+      <button type="button" id="compareView" aria-pressed="false" aria-controls="comparisonView">Compare noise</button>
+    </div>
+    <button type="button" class="btn" id="presentationDemo" aria-pressed="false">Start presentation demo</button>
+  </nav>
+  <section id="gameView" aria-label="Play the map">
+  <div class="demo-guide" id="demoGuide" hidden>
+    <b>A fixed map. An equal shot budget.</b>
+    <p>Scan the fog → move the five orange handles → reveal your agreement with the stage map.</p>
+    <small>Both you and the AI get 45 scans × 100 shots = 4,500 total shots. Same clean N = 8 map, repeatable measurements, reactions off.</small>
+  </div>
   <section class="voyage-banner" aria-label="Welcome aboard Team Popeyes">
     <div>
       <div class="crew-label">Team Popeyes presents · Q-SITE 2026</div>
@@ -226,13 +240,13 @@
     </section>
 
     <aside>
-      <div class="card">
+      <div class="card demo-extra">
         <h2>Scan power</h2>
         <div class="seg" id="shots"></div>
         <div class="note" style="margin-top:9px">Weak scans fluctuate more. Deep scans cost four times as much and reduce sampling uncertainty; gate noise remains.</div>
       </div>
 
-      <div class="card">
+      <div class="card demo-extra">
         <h2>Mode</h2>
         <div class="modes" id="modes">
           <button data-mode="practice"><b>Practice</b><span>labels + hints</span></button>
@@ -254,7 +268,7 @@
           splits the ordered regions from the chaotic one, then reveal.</div>
       </div>
 
-      <div class="card">
+      <div class="card demo-extra">
         <h2>Reading a scan</h2>
         <div class="scale">
           <div class="lab"><b>Outer disc</b> — do neighbours agree?</div>
@@ -289,8 +303,8 @@
         <div class="tech" id="tech"></div>
       </div>
 
-      <div class="card">
-        <h2>Reactions</h2>
+      <details class="card demo-extra">
+        <summary>Reactions &amp; meme settings</summary>
         <div class="row">
           <button class="btn ghost" id="memes" aria-pressed="true">Memes: on</button>
           <button class="btn ghost" id="clips" aria-pressed="true">Personal memes: on</button>
@@ -308,9 +322,13 @@
         <button class="btn ghost" id="popeyeGallery">Popeye: 3 stills, 13 captions</button>
         <div class="note" id="memeMode" style="margin-top:9px"></div>
         <div class="note" style="margin-top:7px">Popeye supplies fallback reactions. GIFs are silent; each reaction includes a bite-size lesson.</div>
-      </div>
+      </details>
     </aside>
   </main>
+  </section>
+  <section id="comparisonView" class="comparison" aria-label="Compare noise" hidden>
+    <div id="comparisonContent"></div>
+  </section>
   <footer class="crew-footer"><b>TEAM POPEYES · STRONG TO THE FINISH</b>
     <span>Quantum Coalition Scientific Track · <a href="assets/popeye/CREDITS.md" target="_blank" rel="noopener">Cartoon credits</a></span>
   </footer>
@@ -325,11 +343,14 @@
 <script src="popeye-memes.js?v=classic-2"></script>
 <script src="famous-memes.js?v=2"></script>
 <script src="measurement.js"></script>
+<script src="comparison-data.js"></script>
 <script>
 const PHASE = {FERRO:0, PARA:1, ANTI:2, FLOAT:3};
 const COLORS = ["#34C2B0","#E08B45","#9B7BD4","#5C9BD1"];
 const canvas = document.getElementById("board"), ctx = canvas.getContext("2d");
-const PAD = {l:58, r:18, t:18, b:44};
+const PAD = {l:76, r:24, t:24, b:60};
+// Plot and pointer coordinates stay in CSS pixels; only the bitmap scales with DPR.
+const boardViewport = {width:720, height:560, dpr:1};
 const COST = {20:1, 100:2, 500:4};
 const SHOT_LABEL = {20:["Weak","20 shots"],100:["Solid","100 shots"],500:["Deep","500 shots"]};
 const HANDLES = 5;
@@ -341,14 +362,36 @@ let best = Number(localStorage.getItem("ph_v2_best")||0) || null;
 let mode = localStorage.getItem("ph_mode") || "practice";
 let tutorial = 0, round = 0;
 let aiRunning=false, aiPreview=false, aiRunId=0, aiPlayerShots=100;
+let demoMode=false, demoSeed=2026, savedDemoPreferences=null;
+function demoRandom(){demoSeed=(1664525*demoSeed+1013904223)>>>0;return demoSeed/4294967296;}
 
 const st = () => data.stages[stage];
 const kLo = () => data.kappas[view.b0], kHi = () => data.kappas[view.b1];
 const hLo = () => data.hs[view.a0],     hHi = () => data.hs[view.a1];
-const px = k => PAD.l + (k-kLo())/(kHi()-kLo())*(canvas.width-PAD.l-PAD.r);
-const py = h => canvas.height-PAD.b - (h-hLo())/(hHi()-hLo())*(canvas.height-PAD.t-PAD.b);
-const toK = x => kLo() + (x-PAD.l)/(canvas.width-PAD.l-PAD.r)*(kHi()-kLo());
-const toH = y => hLo() + (canvas.height-PAD.b-y)/(canvas.height-PAD.t-PAD.b)*(hHi()-hLo());
+const px = k => PAD.l + (k-kLo())/(kHi()-kLo())*(boardViewport.width-PAD.l-PAD.r);
+const py = h => boardViewport.height-PAD.b - (h-hLo())/(hHi()-hLo())*(boardViewport.height-PAD.t-PAD.b);
+const toK = x => kLo() + (x-PAD.l)/(boardViewport.width-PAD.l-PAD.r)*(kHi()-kLo());
+const toH = y => hLo() + (boardViewport.height-PAD.b-y)/(boardViewport.height-PAD.t-PAD.b)*(hHi()-hLo());
+
+function resizeBoard(){
+  const bounds=canvas.getBoundingClientRect();
+  if(!bounds.width || !bounds.height) return false;
+  const dpr=Math.max(1,window.devicePixelRatio||1);
+  const width=Math.round(bounds.width*dpr), height=Math.round(bounds.height*dpr);
+  const changed=boardViewport.width!==bounds.width || boardViewport.height!==bounds.height ||
+    boardViewport.dpr!==dpr || canvas.width!==width || canvas.height!==height;
+  boardViewport.width=bounds.width; boardViewport.height=bounds.height; boardViewport.dpr=dpr;
+  if(canvas.width!==width) canvas.width=width;
+  if(canvas.height!==height) canvas.height=height;
+  ctx.setTransform(width/bounds.width,0,0,height/bounds.height,0,0);
+  return changed;
+}
+function boardPoint(event){
+  if(resizeBoard()) draw();
+  const bounds=canvas.getBoundingClientRect();
+  return {x:(event.clientX-bounds.left)*boardViewport.width/bounds.width,
+          y:(event.clientY-bounds.top)*boardViewport.height/bounds.height};
+}
 
 function boot(d){
   data=d; buildUI(); syncMode(); newRound(); 
@@ -375,7 +418,9 @@ function newRound(){
   /* keep windows that actually contain a border: a window that is all one phase
      has nothing to find, and scores either 100% or 0% for no skill at all. */
   let tries=0;
-  do{
+  if(demoMode){
+    view={b0:0,b1:n-1,a0:0,a1:n-1}; demoSeed=2026; shots=100;
+  }else do{
     const wK=span(Math.round(n*0.55), n-1), wH=span(Math.round(n*0.55), n-1);
     view.b0=span(0, n-1-wK); view.b1=view.b0+wK;
     view.a0=span(0, n-1-wH); view.a1=view.a0+wH;
@@ -387,7 +432,7 @@ function newRound(){
   document.getElementById("agentNote").textContent =
     "Drag the five handles so the line splits order from chaos, then reveal.";
   document.getElementById("hint").classList.remove("gone");
-  document.getElementById("roundTag").textContent = `round ${round} · κ ${kLo().toFixed(2)}–${kHi().toFixed(2)} · h ${hLo().toFixed(2)}–${hHi().toFixed(2)}`;
+  document.getElementById("roundTag").textContent = `${demoMode?'Demo':`round ${round}`} · κ ${kLo().toFixed(2)}–${kHi().toFixed(2)} · h ${hLo().toFixed(2)}–${hHi().toFixed(2)}`;
   syncButtons(); hud(); draw();
 }
 
@@ -396,7 +441,7 @@ function buildUI(){
   data.stages.forEach((sg,i)=>{
     const b=document.createElement("button"); b.className="lvl";
     b.innerHTML=`<b>${i+1}. ${sg.name}</b><span>${sg.sub}</span>`;
-    b.onclick=()=>{const rose=sg.p>st().p; stage=i; newRound(); syncButtons();
+    b.onclick=()=>{if(demoMode)return; const rose=sg.p>st().p; stage=i; newRound(); syncButtons();
                    if(rose) react("noise_up",`gate errors now ${(sg.p*100).toFixed(0)}%`);};
     box.appendChild(b);
   });
@@ -404,7 +449,7 @@ function buildUI(){
   [20,100,500].forEach(s=>{
     const b=document.createElement("button");
     b.innerHTML=`<b>${SHOT_LABEL[s][0]}</b><span>${SHOT_LABEL[s][1]} · ⚡${COST[s]}</span>`;
-    b.dataset.shots=s; b.onclick=()=>{shots=s; syncButtons();};
+    b.dataset.shots=s; b.onclick=()=>{if(demoMode)return; shots=s; syncButtons();};
     sbox.appendChild(b);
   });
   syncButtons();
@@ -422,6 +467,7 @@ function hud(){
   document.getElementById("energy").textContent=energy;
   document.getElementById("energyBar").style.width=Math.max(0,energy/(mode==="practice"?90:60)*100)+"%";
   document.getElementById("pings").textContent=pings.length;
+  document.getElementById("totalShots").textContent=pings.reduce((sum,p)=>sum+p.shots,0).toLocaleString('en-US');
 }
 function nearestIndex(arr,v,lo,hi){let b=lo,bd=1e9;for(let i=lo;i<=hi;i++){const d=Math.abs(arr[i]-v);if(d<bd){bd=d;b=i;}}return b;}
 
@@ -482,7 +528,7 @@ function ping(k,h,cost=true,automated=false){
   if(revealed || ((aiRunning||aiPreview)&&!automated)) return null;
   if(cost && energy<COST[shots]) { react("broke",`${pings.length} scans spent`); return null; }
   const a=nearestIndex(data.hs,h,view.a0,view.a1), b=nearestIndex(data.kappas,k,view.b0,view.b1), sg=st();
-  const sampled=Measurement.sample(sg.readout[a][b],sg.outcomes,shots);
+  const sampled=Measurement.sample(sg.readout[a][b],sg.outcomes,shots,demoMode?demoRandom:Math.random);
   const r={k:data.kappas[b], h:data.hs[a], shots, zz1:sampled[0], zz2:sampled[1]};
   if(cost){
     energy-=COST[shots]; pings.push(r);
@@ -531,8 +577,11 @@ function diverging(t){const c=[[103,0,31],[214,96,77],[247,247,247],[67,147,195]
 
 function draw(){
   if(!data) return;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  const cw=(canvas.width-PAD.l-PAD.r)/(view.b1-view.b0+1), ch=(canvas.height-PAD.t-PAD.b)/(view.a1-view.a0+1);
+  resizeBoard();
+  ctx.clearRect(0,0,boardViewport.width,boardViewport.height);
+  const plotWidth=boardViewport.width-PAD.l-PAD.r, plotHeight=boardViewport.height-PAD.t-PAD.b;
+  const cw=plotWidth/(view.b1-view.b0+1), ch=plotHeight/(view.a1-view.a0+1);
+  ctx.save(); ctx.beginPath(); ctx.rect(PAD.l,PAD.t,plotWidth,plotHeight); ctx.clip();
   for(let a=view.a0;a<=view.a1;a++) for(let b=view.b0;b<=view.b1;b++){
     const x=px(data.kappas[b])-cw/2, y=py(data.hs[a])-ch/2;
     if(revealed){ ctx.fillStyle=COLORS[st().truth[a][b]]; ctx.globalAlpha=.9; }
@@ -540,7 +589,7 @@ function draw(){
            ctx.fillStyle=`rgb(${8+9*n},${17+11*n},${30+16*n})`; ctx.globalAlpha=1; }
     ctx.fillRect(x,y,cw+1,ch+1);
   }
-  ctx.globalAlpha=1;
+  ctx.restore(); ctx.globalAlpha=1;
   pings.forEach(p=>{
     const x=px(p.k), y=py(p.h);
     ctx.beginPath(); ctx.arc(x,y,20,0,7); ctx.fillStyle="rgba(255,255,255,.06)"; ctx.fill();
@@ -570,22 +619,34 @@ function draw(){
   axes();
 }
 function axes(){
-  ctx.strokeStyle="#24384f"; ctx.lineWidth=1; ctx.fillStyle="#8FA6BA"; ctx.font="12px Outfit,system-ui";
-  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,canvas.height-PAD.b);
-  ctx.lineTo(canvas.width-PAD.r,canvas.height-PAD.b); ctx.stroke();
-  for(let i=0;i<=4;i++){
-    const k=kLo()+i/4*(kHi()-kLo()), h=hLo()+i/4*(hHi()-hLo());
-    ctx.fillText(k.toFixed(2),px(k)-12,canvas.height-PAD.b+20);
-    ctx.fillText(h.toFixed(2),10,py(h)+4);
+  const bottom=boardViewport.height-PAD.b, right=boardViewport.width-PAD.r;
+  ctx.save();
+  ctx.strokeStyle="#536B82"; ctx.lineWidth=1; ctx.fillStyle="#B9CBDA"; ctx.font="12px Outfit,system-ui";
+  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,bottom);
+  ctx.lineTo(right,bottom); ctx.stroke();
+  const xTicks=right-PAD.l<300?2:4;
+  ctx.textAlign="center"; ctx.textBaseline="top";
+  for(let i=0;i<=xTicks;i++){
+    const k=kLo()+i/xTicks*(kHi()-kLo()), x=px(k);
+    ctx.beginPath(); ctx.moveTo(x,bottom); ctx.lineTo(x,bottom+5); ctx.stroke();
+    ctx.fillText(k.toFixed(2),x,bottom+11);
   }
-  ctx.save(); ctx.translate(26,canvas.height/2+30); ctx.rotate(-Math.PI/2);
-  ctx.fillText("field strength  (h)",0,0); ctx.restore();
+  ctx.textAlign="right"; ctx.textBaseline="middle";
+  for(let i=0;i<=4;i++){
+    const h=hLo()+i/4*(hHi()-hLo()), y=py(h);
+    ctx.beginPath(); ctx.moveTo(PAD.l-5,y); ctx.lineTo(PAD.l,y); ctx.stroke();
+    ctx.fillText(h.toFixed(2),PAD.l-11,y);
+  }
+  ctx.font="600 13px Outfit,system-ui"; ctx.fillStyle="#D9E6EF";
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("Frustration (κ)",(PAD.l+right)/2,boardViewport.height-13);
+  ctx.translate(17,(PAD.t+bottom)/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText("Field strength (h)",0,0); ctx.restore();
 }
 
 canvas.addEventListener("pointerdown",e=>{
   if(!data || revealed || aiRunning || aiPreview) return;
-  const r=canvas.getBoundingClientRect();
-  const x=(e.clientX-r.left)*canvas.width/r.width, y=(e.clientY-r.top)*canvas.height/r.height;
+  const {x,y}=boardPoint(e);
   for(const p of handles){
     const k=kLo()+p.t*(kHi()-kLo());
     if(Math.hypot(px(k)-x,py(p.h)-y)<18){ drag=p; return; }
@@ -595,10 +656,12 @@ canvas.addEventListener("pointerdown",e=>{
 });
 canvas.addEventListener("pointermove",e=>{
   if(!drag || revealed || aiRunning || aiPreview) return;
-  const r=canvas.getBoundingClientRect();
-  drag.h=Math.max(hLo(),Math.min(hHi(),toH((e.clientY-r.top)*canvas.height/r.height))); draw();
+  drag.h=Math.max(hLo(),Math.min(hHi(),toH(boardPoint(e).y))); draw();
 });
 window.addEventListener("pointerup",()=>{ if(drag&&tutorial===3) step(4); drag=null; });
+window.addEventListener("resize",()=>draw());
+if(typeof ResizeObserver!=="undefined") new ResizeObserver(()=>draw()).observe(canvas);
+if(document.fonts) document.fonts.ready.then(()=>draw());
 
 function stars(s){ return s>=.95?"★★★":s>=.88?"★★☆":s>=.75?"★☆☆":"☆☆☆"; }
 function showResult(id, s){
@@ -611,18 +674,19 @@ function showResult(id, s){
     <p class="result-lesson">${lesson}</p>
     <div class="sub">${st().name} · ${st().sub} · round ${round}</div>
     <div class="scores">
-      <div><div class="score-num">${(s*100).toFixed(1)}%</div><div class="sub">map called correctly</div></div>
+      <div><div class="score-num">${(s*100).toFixed(1)}%</div><div class="sub">agreement with stage map (ordered vs disordered)</div></div>
       <div class="stars">${stars(s)}</div>
     </div>
     <div class="chips">
       <span class="chip">scans <b>${pings.length}</b></span>
+      <span class="chip">total shots <b>${pings.reduce((sum,p)=>sum+p.shots,0).toLocaleString('en-US')}</b></span>
       <span class="chip">energy <b>${(mode==="practice"?90:60)-energy}</b></span>
       ${agentScore!==null?`<span class="chip">AI <b>${(agentScore*100).toFixed(1)}%</b></span>`:""}
       ${best?`<span class="chip">best <b>${best.toFixed(1)}%</b></span>`:""}
     </div>
     <div class="row">
-      <button class="btn" id="again">New map, same stage</button>
-      ${stage<data.stages.length-1?`<button class="btn ghost" id="next">Next stage →</button>`:""}
+      <button class="btn" id="again">${demoMode?'Restart demo':'New map, same stage'}</button>
+      ${!demoMode&&stage<data.stages.length-1?`<button class="btn ghost" id="next">Next stage →</button>`:""}
       <button class="btn ghost" id="close">Look at the map</button>
     </div>`;
   document.getElementById("result").classList.add("show");
@@ -667,7 +731,7 @@ function syncAgentControls(){
   document.getElementById("reveal").disabled=locked;
   document.getElementById("template").disabled=locked;
   document.getElementById("takeTurn").hidden=!aiPreview;
-  [...document.getElementById("shots").children].forEach(b=>b.disabled=locked);
+  [...document.getElementById("shots").children].forEach(b=>b.disabled=locked||demoMode);
 }
 function cancelAgent(){
   ++aiRunId; // Invalidate any pending animation before the stage/mode/map changes.
@@ -682,6 +746,7 @@ function agentStatus(title,detail){
 }
 function newRoundKeepView(){
   cancelAgent();
+  if(demoMode){demoSeed=2026;shots=100;}
   document.getElementById('cards').innerHTML='';lastCard=0;
   energy = mode==="practice" ? 90 : 60; pings=[]; revealed=false; cheapPings=0; drag=null;
   const mid=(hLo()+hHi())/2; handles.forEach(p=>p.h=mid);
@@ -727,7 +792,7 @@ document.getElementById("agent").onclick=async()=>{
     if(run!==aiRunId) return;
     agentScore=score(); aiRunning=false; aiPreview=true;
     syncButtons(); syncAgentControls();
-    agentStatus(`AI finished · ${(agentScore*100).toFixed(1)}%`,`${pings.length} scans · 100 shots each · ${totalPings*COST[100]} energy. This is the AI's boundary, not your score.`);
+    agentStatus(`AI finished · ${(agentScore*100).toFixed(1)}%`,`${pings.length} scans · ${(totalPings*100).toLocaleString('en-US')} total shots · ${totalPings*COST[100]} energy. Agreement with the stage map.`);
     document.getElementById("agentNote").textContent=`AI target: ${(agentScore*100).toFixed(1)}%. Inspect its boundary, then press “Your turn — same map” above the chart.`;
   }catch(error){
     if(run!==aiRunId) return;
@@ -741,13 +806,14 @@ document.getElementById("takeTurn").onclick=()=>{
   newRoundKeepView();
 };
 
-function syncMode(){
+function syncMode(persist=true){
   [...document.getElementById("modes").children].forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
   document.getElementById("template").style.display = mode==="practice" ? "block" : "none";
-  try{ localStorage.setItem("ph_mode",mode); }catch(e){}
+  if(persist) try{ localStorage.setItem("ph_mode",mode); }catch(e){}
   if(data) draw();
 }
 document.getElementById("modes").onclick=e=>{
+  if(demoMode) return;
   const b=e.target.closest("button[data-mode]"); if(!b) return;
   agentScore=null; document.getElementById("agentNote").textContent="New mode: send the AI for a fresh target."; mode=b.dataset.mode; if(mode==="hunter") stopTutorial(); syncMode(); newRoundKeepView();
 };
@@ -931,11 +997,11 @@ function step(n){
 function stopTutorial(){ tutorial=0; document.getElementById("coach").classList.remove("show"); }
 document.getElementById("tutorial").onclick=()=>{ mode="practice"; syncMode(); newRound(); step(1); };
 
-function syncMemeControls(){
+function syncMemeControls(persist=true){
   for(const [id,label,on,key] of [['memes','Memes',memesOn,'all'],['clips','Personal memes',useClips,'personal'],['famous','Famous meme GIFs',famousOn,'famous'],['popeye','Popeyes',popeyeOn,'popeye']]){
     const button=document.getElementById(id);
     button.textContent=`${label}: ${on?'on':'off'}`;button.setAttribute('aria-pressed',String(on));
-    try{localStorage.setItem('ph_meme_'+key,on?'on':'off');}catch(e){}
+    if(persist) try{localStorage.setItem('ph_meme_'+key,on?'on':'off');}catch(e){}
   }
   document.getElementById('testMeme').disabled=!memesOn||!useClips;
   document.getElementById('previewFamous').disabled=!memesOn||!famousOn;
@@ -990,11 +1056,42 @@ document.getElementById("popeyeGallery").onclick=()=>{
 };
 
 /* everything is defined: now load the data and start */
+function setExperimentView(comparison){
+  if(comparison&&aiRunning){agentScore=null;newRoundKeepView();}
+  hideResult(); document.getElementById('info').classList.remove('show');
+  document.getElementById('cards').innerHTML='';
+  document.getElementById('gameView').hidden=comparison;
+  document.getElementById('comparisonView').hidden=!comparison;
+  document.getElementById('playView').setAttribute('aria-pressed',!comparison);
+  document.getElementById('compareView').setAttribute('aria-pressed',comparison);
+  document.getElementById('app').classList.toggle('comparison-open',comparison);
+  if(!comparison) draw();
+}
+function setPresentationDemo(enabled){
+  cancelAgent();stopTutorial();hideResult();
+  if(enabled){
+    savedDemoPreferences={mode,stage,shots,memesOn};
+    demoMode=true;mode='practice';stage=0;shots=100;memesOn=false;
+  }else{
+    demoMode=false;
+    if(savedDemoPreferences){({mode,stage,shots,memesOn}=savedDemoPreferences);savedDemoPreferences=null;}
+  }
+  document.getElementById('app').classList.toggle('presentation',demoMode);
+  document.getElementById('demoGuide').hidden=!demoMode;
+  document.getElementById('presentationDemo').textContent=demoMode?'Exit presentation demo':'Start presentation demo';
+  document.getElementById('presentationDemo').setAttribute('aria-pressed',demoMode);
+  document.getElementById('newMap').textContent=demoMode?'Restart fixed map':'New map';
+  syncMode(false);syncMemeControls(false);setExperimentView(false);newRound();syncAgentControls();
+}
+document.getElementById('playView').onclick=()=>setExperimentView(false);
+document.getElementById('compareView').onclick=()=>setExperimentView(true);
+document.getElementById('presentationDemo').onclick=()=>setPresentationDemo(!demoMode);
 syncMemeControls();
 if (window.PHASE_HUNTER_DATA) boot(window.PHASE_HUNTER_DATA);
 else fetch("dataset.json").then(r=>r.json()).then(boot)
   .catch(()=>{document.getElementById("levelNote").textContent="dataset.js missing - run scripts/make_stages.py";});
 
 </script>
+<script src="comparison.js"></script>
 </body>
 </html>

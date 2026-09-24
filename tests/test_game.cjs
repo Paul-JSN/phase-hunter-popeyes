@@ -13,11 +13,13 @@ for(let i=0;i<N;i++){
 assert.ok(Math.abs(sum/N-.3)<.003);
 assert.ok(Math.abs(sumsq/N-(sum/N)**2-.0041)<.00025);
 assert.ok(Math.abs(sumAB/N-(sum/N)*(sumB/N)-.003)<.00025);
-const elements={};const handlers={};
+const elements={};const handlers={};const windowHandlers={};
+let boardBounds={left:0,top:0,width:720,height:560};
 const context2d=new Proxy({measureText:()=>({width:30})},{get:(o,k)=>o[k]??(()=>{})});
-function element(id){return elements[id]??=( {children:[],style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},appendChild(x){this.children.push(x)},remove(){},scrollIntoView(){},setAttribute(){},getContext:()=>context2d,width:720,height:560,addEventListener:(name,fn)=>{handlers[name]=fn},getBoundingClientRect:()=>({left:0,top:0,width:720,height:560})});}
+function element(id){return elements[id]??=( {children:[],style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},appendChild(x){this.children.push(x)},remove(){},scrollIntoView(){},setAttribute(){},getContext:()=>context2d,width:720,height:560,addEventListener:(name,fn)=>{handlers[name]=fn},getBoundingClientRect:()=>boardBounds});}
 const timers=[];
-const scope={console,Math,Date,setTimeout:fn=>{timers.push(fn);return timers.length},localStorage:{getItem:()=>null,setItem(){}},document:{getElementById:element,createElement:()=>element(Math.random())},window:{addEventListener(){}}};
+const preferences=new Map();
+const scope={console,Math,Date,setTimeout:fn=>{timers.push(fn);return timers.length},localStorage:{getItem:key=>preferences.get(key)??null,setItem:(key,value)=>preferences.set(key,String(value))},document:{getElementById:element,createElement:()=>element(Math.random())},window:{devicePixelRatio:2,addEventListener:(name,fn)=>{windowHandlers[name]=fn}}};
 vm.createContext(scope);
 vm.runInContext(fs.readFileSync('game/dataset.js','utf8'),scope);
 vm.runInContext(fs.readFileSync('game/measurement.js','utf8'),scope);
@@ -32,6 +34,34 @@ async function drain(){
   while(timers.length){timers.shift()();await Promise.resolve();}
 }
 async function main(){
+  assert.equal(elements.board.width,1440,'retina bitmap has two pixels per CSS pixel');
+  assert.equal(elements.board.height,1120);
+  // Resizing and changing screen density preserve data coordinates and drag hit targets.
+  const resizeView=read('JSON.stringify(view)');
+  const resizeHandles=read('JSON.stringify(handles)');
+  boardBounds={left:35,top:80,width:320,height:340};
+  scope.window.devicePixelRatio=3;
+  windowHandlers.resize();
+  assert.equal(elements.board.width,960);assert.equal(elements.board.height,1020);
+  assert.equal(read('JSON.stringify(view)'),resizeView);
+  assert.equal(read('JSON.stringify(handles)'),resizeHandles);
+  assert.ok(Math.abs(read('toK(px((kLo()+kHi())/2))-(kLo()+kHi())/2'))<1e-12);
+  assert.ok(Math.abs(read('toH(py((hLo()+hHi())/2))-(hLo()+hHi())/2'))<1e-12);
+  const handlePoint=read('({x:px(kLo()+handles[2].t*(kHi()-kLo())),y:py(handles[2].h)})');
+  handlers.pointerdown({clientX:boardBounds.left+handlePoint.x,clientY:boardBounds.top+handlePoint.y});
+  assert.equal(read('drag===handles[2]'),true,'scaled canvas handles use CSS-pixel hit targets');
+  const targetH=read('hLo()+.7*(hHi()-hLo())');
+  handlers.pointermove({clientX:boardBounds.left+handlePoint.x,clientY:boardBounds.top+read(`py(${targetH})`)});
+  assert.ok(Math.abs(read('handles[2].h')-targetH)<1e-12);
+  windowHandlers.pointerup();
+  // A resized click samples the intended grid point, independent of DPR and page position.
+  const samplePoint=read('({k:data.kappas[view.b0+2],h:data.hs[view.a0+2]})');
+  handlers.pointerdown({clientX:boardBounds.left+read(`px(${samplePoint.k})`),clientY:boardBounds.top+read(`py(${samplePoint.h})`)});
+  assert.equal(read('pings.length'),1);
+  assert.ok(Math.abs(read('pings[0].k')-samplePoint.k)<1e-12);
+  assert.ok(Math.abs(read('pings[0].h')-samplePoint.h)<1e-12);
+  boardBounds={left:0,top:0,width:720,height:560};scope.window.devicePixelRatio=2;
+  windowHandlers.resize();elements.reset.onclick();
   const initial=read('JSON.stringify(view)');
   read('shots=20');
   const run=elements.agent.onclick();
@@ -148,8 +178,66 @@ async function main(){
   for(const event of ['ai_start','repeat_changed','overspend','personal_best','tutorial_milestone','no_scans']) {
     assert.ok(read(`art(chooseReaction(${JSON.stringify(event)}))`).length);
   }
+  // Presentation is temporary: entering from a different stage/mode restores user preferences on exit.
+  read('mode="hunter";stage=2;shots=500;memesOn=true;syncMode();syncMemeControls();newRound()');
+  elements.presentationDemo.onclick();
+  assert.equal(read('demoMode'),true);assert.equal(read('mode'),'practice');
+  assert.equal(read('stage'),0);assert.equal(read('shots'),100);assert.equal(read('memesOn'),false);
+  assert.equal(read('energy'),90);assert.equal(elements.demoGuide.hidden,false);
+  assert.equal(preferences.get('ph_mode'),'hunter','demo must not persist its temporary mode');
+  assert.equal(preferences.get('ph_meme_all'),'on','demo must not persist its temporary quiet preference');
+  const fixedView=read('JSON.stringify(view)');
+  assert.equal(fixedView,read('JSON.stringify({b0:0,b1:data.grid-1,a0:0,a1:data.grid-1})'));
+  elements.levels.children[2].onclick();elements.shots.children[0].onclick();
+  elements.modes.onclick({target:{closest:()=>({dataset:{mode:'hunter'}})}});
+  assert.equal(read('stage'),0);assert.equal(read('shots'),100);assert.equal(read('mode'),'practice');
+  assert.ok(elements.shots.children.every(button=>button.disabled),'fixed presentation scan power is locked');
+  read('ping(data.kappas[3],data.hs[4])');
+  const firstDemoScan=read('JSON.stringify(pings[0])');
+  elements.reset.onclick();read('ping(data.kappas[3],data.hs[4])');
+  assert.equal(read('JSON.stringify(pings[0])'),firstDemoScan,'retry uses the same measurement seed');
+  elements.compareView.onclick();
+  assert.equal(elements.gameView.hidden,true);assert.equal(elements.comparisonView.hidden,false);
+  elements.playView.onclick();
+  assert.equal(elements.gameView.hidden,false);assert.equal(elements.comparisonView.hidden,true);
+  assert.equal(read('JSON.stringify(pings[0])'),firstDemoScan,'switching views preserves a player run');
+  elements.reset.onclick();
+  read('for(let i=0;i<46;i++)ping(kLo(),hLo())');
+  assert.equal(read('pings.length'),45,'a player cannot exceed the fixed demo budget');
+  assert.equal(read('energy'),0);assert.equal(elements.totalShots.textContent,'4,500');
+  elements.reveal.onclick();
+  assert.match(elements.sheet.innerHTML,/Restart demo/);
+  assert.ok(!elements.sheet.innerHTML.includes('id="next"'),'demo results cannot advance to another stage');
+  elements.newMap.onclick();
+  assert.equal(read('JSON.stringify(view)'),fixedView);assert.equal(read('pings.length'),0);
+  const demoRun=elements.agent.onclick();await drain();await demoRun;
+  assert.equal(read('pings.length'),45);assert.equal(elements.totalShots.textContent,'4,500');
+  const demoScore=read('agentScore');
+  elements.compareView.onclick();elements.playView.onclick();
+  assert.equal(read('aiPreview'),true,'a finished AI map survives a comparison visit');
+  assert.equal(read('agentScore'),demoScore);
+  elements.takeTurn.onclick();
+  assert.equal(read('energy'),90);assert.equal(read('shots'),100);assert.equal(read('agentScore'),demoScore);
+  read('ping(data.kappas[3],data.hs[4])');
+  assert.equal(read('JSON.stringify(pings[0])'),firstDemoScan,'the player handoff restores the demo seed');
+  const interruptedDemo=elements.agent.onclick();
+  elements.compareView.onclick();
+  await drain();await interruptedDemo;
+  assert.equal(read('aiRunning'),false);assert.equal(read('pings.length'),0);assert.equal(read('energy'),90);
+  assert.equal(read('agentScore'),null,'changing views cannot leave a partial AI target');
+  elements.playView.onclick();
+  const exitingDemo=elements.agent.onclick();
+  elements.presentationDemo.onclick();
+  await drain();await exitingDemo;
+  assert.equal(read('demoMode'),false);assert.equal(elements.demoGuide.hidden,true);
+  assert.equal(read('mode'),'hunter');assert.equal(read('stage'),2);assert.equal(read('shots'),500);
+  assert.equal(read('memesOn'),true);assert.equal(preferences.get('ph_meme_all'),'on');
+  assert.equal(read('energy'),60);assert.equal(read('pings.length'),0);assert.equal(read('aiRunning'),false);
+  assert.ok(elements.shots.children.every(button=>!button.disabled),'normal scan power controls unlock after demo');
   console.log('Expanded pack tests passed: 12 unique previews, rotation, contextual lessons, milestone selection, and fallback coverage.');
   console.log('Meme tests passed: mixed/personal/famous/fallback routing, all-off results, quiet popups, and reduced-motion assets.');
   console.log('Game tests passed: visible AI progress, persistent demo, explicit player handoff, 45/30 scans, cancellation, locked AI scoring, and preserved rematches.');
+  console.log('Canvas tests passed: DPR backing resolution, viewport resize invariance, scan coordinates, and handle dragging after resize.');
+  console.log('Presentation tests passed: fixed map and shot budget, repeatable measurements, AI handoff/cancellation, view switching, and preference restoration.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

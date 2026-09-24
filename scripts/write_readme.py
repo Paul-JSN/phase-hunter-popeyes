@@ -6,6 +6,10 @@ def main():
  load=lambda name:json.loads((ROOT/'data'/name).read_text())
  clean=load('summary.json');noise=load('noise_analysis.json');size=load('commensuration.json')
  budget=load('budget_study.json');large=load('large_n_cut_analysis.json');second=load('second_method.json');readout=load('readout_validation.json')
+ comparison=load('comparison.json')
+ maprows='\n'.join(f"| {name.capitalize()} | {100*r['ordered_area']:.2f}% | {100*r['agreement_to_clean']:.2f}% | {r['signal_mae']:.4f} |" for name,r in comparison['maps'].items())
+ interiorrows='\n'.join(f"| {r['label']} | {r['points']} | {100*r['signal_loss']:.2f}% | {100*r['area_loss']:.2f}% |" for r in comparison['interiors'])
+ shotrows='\n'.join(f"| {r['shots']} | {r['total_shots_per_map']:,} | "+' | '.join(f"{r[name]['mae']:.4f} ± {r[name]['mae_sd']:.4f}" for name in ['noisy','low_noise','corrected'])+' |' for r in comparison['finite_shots']['results'])
  stages=['Clear skies','Static','Whiteout'];methods=['random','grid','bisect','adaptive']
  sizes='\n'.join(f"| {r['qubits']} | {'Yes' if r['period_four_fits'] else 'No'} | {r['zz2']:.3f} | {100*r['agreement_excluding_floating']:.1f}% |" for r in size['rows'])
  areas='\n'.join(f"| {p} | {100*r['fixed_rule']['ordered']:.2f}% | {100*r['recalibrated']['ordered']:.2f}% |" for p,r in noise['phase_areas'].items())
@@ -184,13 +188,55 @@ Mean peak deviation from the analytic reference is **{fidelity['mean_abs_deviati
 
 Two-point exponential extrapolation from p=0.01 and 0.05 reduces mean C1/C2 errors from **{zne['mean_abs_error_before']['zz1']:.3f}/{zne['mean_abs_error_before']['zz2']:.3f}** to **{zne['mean_abs_error_after']['zz1']['exponential']:.4f}/{zne['mean_abs_error_after']['zz2']['exponential']:.4f}**. The target is the **same variational state at p=0**, not the exact ground state. This infinite-shot experiment does not test finite-shot error amplification, unknown noise or hardware performance.
 
+## Clean, noisy and corrected: interactive comparison
+
+Select **Compare noise** in the game to see the three maps side by side, with an optional clean-boundary overlay. Every panel uses the same archived 24×24 N=8 variational circuit scan and the same three centroids fitted once on its p=0 signals. The corrected map uses the archived two-point **exponential** estimator, with its existing linear fallback; the maps show infinite-shot expectations. Agreement below means matching the clean circuit's labels, not agreement with the exact ground state or analytic phase boundaries.
+
+| Map | Classified ordered area | Agreement with clean labels | Mean C1/C2 absolute error |
+|---|---:|---:|---:|
+{maprows}
+
+The corrected labels match every clean label on this finite grid, although its signal error remains nonzero. This does not establish exact state recovery or a thermodynamic boundary. The exponential model is also imperfect for small signals that change sign between noise levels; the downloadable results include these diagnostics.
+
+### Why signal loss and map-area loss differ
+
+At p=0.05, compare predefined interior patches with each phase's full classified area:
+
+| Phase | Interior points | Interior signal loss | Classified area loss |
+|---|---:|---:|---:|
+{interiorrows}
+
+The ferromagnetic patch uses mean |C1| at κ<0.3, 0.1<h<0.4; the antiphase patch uses mean |C2| at κ>0.8, 0.1<h<0.4. Signal loss is one minus the ratio of these noisy and clean means. Area loss is relative to that phase's clean area over the whole grid.
+
+The stripe signal weakens more, but the ferromagnetic labeled region shrinks more. Labels depend on **both correlators and their distance from the frozen classifier's decision boundaries**. Interior attenuation alone cannot tell how many grid points cross those boundaries. This explains why the two metrics can disagree; it does not isolate spin separation as the cause of the different circuit responses or show that a physical phase disappears.
+
+### Finite shots: an equal-budget correction test
+
+The comparison also includes a separate **linear** extrapolation experiment on all 576 grid points, with 200 independent seeded repetitions. Each method receives B total whole-register shots per point. The two uncorrected baselines spend all B shots at p=0.05 or p=0.01. Correction splits B/2 at each setting and computes `1.25 C(0.01) − 0.25 C(0.05)` without clipping. Both C1 and C2 come from every shot, retaining their covariance. The split is fixed, not optimized.
+
+The target and classifier remain the same archived p=0 circuit. Values are the full-grid mean absolute C1/C2 error **± one standard deviation across repetitions**:
+
+| Total shots per point | Total shots per map, per method | No correction, p=0.05 | Lower noise only, p=0.01 | Linear correction |
+|---:|---:|---:|---:|---:|
+{shotrows}
+
+Correction lowers signal error relative to p=0.05 at every tested budget. At 20 shots, spending all shots at p=0.01 is better. At 100 shots, correction has a small signal-error advantage over p=0.01 but **lower phase-label agreement**; at 500 shots its signal-error advantage grows while the phase-agreement difference is inconclusive. Better signal estimation and better classification are distinct outcomes.
+
+The methods share half-batches for paired comparisons while each retains its B-shot marginal distribution. [Full results](data/comparison.json) report per-method means, SDs and SEs, plus paired mean differences and approximate 95% intervals (`mean ± 1.96 SE`). These intervals describe sampling variation for this fixed archive. The study assumes known noise settings with equal per-shot cost, excludes the cost of clean reference/classifier calibration, and does not test unknown noise or hardware. It tests linear correction, not the exponential estimator used by the maps above.
+
+Rebuild the JSON and browser data with `python3 scripts/make_comparison.py`; this uses only NumPy and the shipped archives, with no VQE rerun. Run the focused scientific checks with `python3 -m unittest discover -s tests -p test_comparison.py`.
+
 ## Play, learn and replay
 
 Five stages cover clean N=8, N=8 with 1% or 5% gate noise, frustrated clean N=6, and clean N=12. The N=12 game stage is clean; the larger-system noisy cuts above are a separate scientific experiment.
 
 Practice supplies labels and 90 energy; Hunter removes hints and supplies 60. Weak/solid/deep scans cost 1/2/4 energy for 20/100/500 shots. The AI spends the same energy on the same map: 45 solid scans in Practice or 30 in Hunter. Its scans animate and remain visible until **Your turn — same map** restores the player's budget. Retry preserves the target; New map clears it.
 
+**Start presentation demo** selects the full clean N=8 game map, fixes scans at 100 shots, seeds the measurements for repeatability and turns reactions off. Both player and AI receive **45 scans × 100 shots = 4,500 shots per side**. Restarting the fixed map repeats the demonstration; exiting restores the saved play preferences. The game score is labeled as reference-map agreement. The comparison's clean panel instead uses the variational circuit archive described above.
+
 The nautical theme uses chart paper, navy controls, sailor-red actions and spinach-green selections. Phase colors retain their scientific meaning.
+
+The game canvas scales its backing resolution with the display's device-pixel ratio so labels stay sharp on high-density screens. The vertical **Field strength (h)** title has its own margin outside the tick labels. Comparison maps use SVG axes and labels.
 
 **Personal memes** and **Famous meme GIFs** have independent switches. Both default on, alternating where both fit. Twelve GIFs and twenty-seven contextual captions attach short lessons to meaningful events. SUIII celebrates measured three-star results or AI wins; a no-scan reveal gets confused Travolta. Common events rotate through variants. Popeye supplies three fallback stills with thirteen captions.
 
@@ -215,11 +261,13 @@ python scripts/analyse_size.py
 python scripts/analyse_noise.py --qubits 8
 python scripts/budget_study.py
 python scripts/second_method.py
+python3 scripts/make_comparison.py
 python scripts/large_n_cut.py --analyse-only
 python scripts/write_readme.py
 python scripts/build_notebook.py
 python scripts/make_writeup.py
 python -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -p test_comparison.py
 node tests/test_game.cjs
 ```
 
@@ -247,7 +295,9 @@ The recorder uses stable control IDs and measured element bounds, validates non-
 
 Tests cover joint sampling means/variance/covariance, exact budgets, ring-size bounds, basis-invariant fidelity, better-fit persistence, visible AI progress, same-map handoff, reaction switches and victory conditions.
 
-Remaining limitations: unresolved floating phase; finite-ring and VQE bias; heuristic inference rules; sparse larger-system cuts; no finite-shot mitigation experiment; no hardware run or quantum advantage. The presentation video remains to be recorded.
+The comparison checks additionally verify the source archive and recovered means, fixed classifier identities, exponential-estimator parity, linear-estimator covariance, unclipped extrapolates, seeded reproducibility and matching browser/JSON exports.
+
+Remaining limitations: unresolved floating phase; finite-ring and VQE bias; heuristic inference rules; sparse larger-system cuts; the finite-shot correction study is restricted to the archived N=8 circuit, known noise and a fixed shot split; no hardware run or quantum advantage. The presentation video remains to be recorded.
 
 ## Sources
 

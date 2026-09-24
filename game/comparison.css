@@ -1,0 +1,62 @@
+/* Focused presentation surfaces; preserve the game's nautical palette. */
+[hidden]{display:none!important}
+#board{border:0;outline:1px solid #46616a;outline-offset:-1px}
+.stage .hint{position:static;transform:none;width:auto;max-width:100%;margin:10px 0 0;padding:8px 10px;font-size:12px}
+.stage .hint.gone{display:none}
+.view-nav{display:flex;align-items:center;gap:10px;margin:0 0 20px;flex-wrap:wrap}
+.view-switch{display:flex;gap:4px;padding:4px;border:1px solid #b9b8a6;border-radius:9px;background:#fffaeb}
+.view-switch button{font:600 14px Outfit,system-ui;color:var(--navy);background:transparent;border:0;border-radius:6px;padding:10px 16px;cursor:pointer}
+.view-switch button[aria-pressed=true]{color:#fff6db;background:var(--navy)}
+.view-nav>.btn{width:auto;margin:0 0 0 auto;padding:11px 17px;box-shadow:none;font-size:14px}
+.demo-guide{background:#fff9e8;color:var(--navy);border-left:4px solid var(--spinach);padding:15px 18px;margin-bottom:18px;line-height:1.6}
+.demo-guide b{display:block;font-size:18px}.demo-guide p{margin:4px 0;font-size:14px}
+.demo-guide small{color:#476063;font-size:13px}
+.presentation .voyage-banner,.presentation .route-label,.presentation #levels,.presentation .demo-extra{display:none}
+.presentation .hud .energy-hud,.presentation .hud .best-hud{display:none}
+.presentation main aside{display:block}
+.presentation main .stage{scroll-margin-top:16px}
+.shot-hud span{font-size:11px}
+.comparison-open .hud .pill{display:none}
+.card>summary{cursor:pointer;font-size:13px;font-weight:600;color:#dfd1ac;padding:3px 0}
+.comparison{color:var(--navy)}
+.comparison h2{font-size:clamp(25px,3vw,34px);line-height:1.15;letter-spacing:-.6px;margin:0 0 10px}
+.comparison h3{font-size:21px;line-height:1.25;margin:0 0 7px}
+.comparison p{font-size:15px;line-height:1.65;margin:0 0 12px;max-width:82ch}
+.comparison .lede{color:#425e65}
+.map-toolbar{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:18px 0 14px;font-size:13px}
+.map-toolbar label{cursor:pointer;display:flex;align-items:center;gap:7px}
+.map-toolbar input{accent-color:var(--spinach);width:16px;height:16px}
+.map-legend{display:flex;gap:17px;flex-wrap:wrap;margin:0 auto 0 0}
+.map-legend span{display:flex;align-items:center;gap:6px}
+.map-legend i{display:inline-block;width:12px;height:12px;border-radius:2px}
+.comparison-maps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.comparison-map{margin:0;min-width:0;border:1px solid #b9b8a6;border-radius:10px;background:#fffaeb;overflow:hidden}
+.map-label{padding:17px 18px 8px}
+.map-label h3{font-size:19px;margin:0 0 4px}.map-label p{font-size:12px;color:#476063;line-height:1.5;min-height:36px;margin:0}
+.comparison-map svg{display:block;width:100%;height:auto;overflow:visible}
+.comparison-map svg text{font-family:Outfit,system-ui,sans-serif;fill:#284854;font-size:13px;font-variant-numeric:tabular-nums}
+.map-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid #d9d0b7;padding:13px 18px}
+.map-metrics strong{display:block;font-size:23px;line-height:1.2;font-variant-numeric:tabular-nums}.map-metrics span{display:block;font-size:11px;margin-top:4px;color:#476063;line-height:1.4}
+.map-metrics .signal-error{grid-column:1 / -1;margin:5px 0 0;font-size:11px;color:#476063}
+.comparison .method-note{font-size:12px;color:#486269;line-height:1.65;margin:12px 0 0;max-width:none}
+.comparison .boundary-key{display:inline-block;width:23px;border-top:2px dashed #284854;vertical-align:middle;margin:0 5px}
+.comparison-insight{border-top:2px solid #b6b7a4;margin-top:29px;padding-top:24px}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin:17px 0}
+.phase-insight{border-left:4px solid;padding-left:15px}.phase-insight h4{font-size:17px;margin:0 0 8px}
+.phase-insight dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:7px 10px;font-size:14px}
+.phase-insight dt{color:#476063}.phase-insight dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.phase-insight small{font-size:12px;color:#476063;display:block;margin-top:9px;line-height:1.6}
+.comparison .takeaway{border-left:4px solid var(--spinach);padding:12px 16px;background:#e4e9d0;margin:16px 0 0;font-size:14px;max-width:none}
+.shot-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:17px 0 10px;font-size:14px}
+.shot-options{display:flex;gap:5px}.shot-options button{font:600 14px Outfit,system-ui;padding:8px 15px;color:var(--navy);border:1px solid #9eac9d;border-radius:6px;background:#fffaeb;cursor:pointer}
+.shot-options button[aria-pressed=true]{background:var(--spinach);border-color:var(--spinach);color:#fff6db}
+.shot-results{border-collapse:collapse;width:100%;font-size:14px;text-align:left;background:#fffaeb;border:1px solid #c6c0ac}
+.shot-results th,.shot-results td{padding:12px 16px;border-bottom:1px solid #dad5c2}
+.shot-results th{font-weight:600}.shot-results thead th{font-size:12px;color:#476063;background:#e9e5d3}
+.shot-results td{font-variant-numeric:tabular-nums}.shot-results .result-value{font-weight:600;white-space:nowrap}.shot-results .result-spread{display:block;font-size:11px;color:#52686c;margin-top:2px}
+.shot-results .corrected-row{background:#e9eed8}
+.comparison details{margin:18px 0;font-size:13px;color:#476063}.comparison summary{cursor:pointer;font-weight:600;color:var(--navy);padding:8px 0}.comparison details p{font-size:13px;margin:8px 0}
+.comparison a{color:#30573a;text-underline-offset:3px}
+.comparison-error{border:1px solid var(--sail-red);padding:18px;background:#fff9e8}
+@media(max-width:999px){.comparison-maps{grid-template-columns:1fr}.comparison-map{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.7fr)}.map-label{grid-column:2;grid-row:1;padding-top:24px}.comparison-map svg{grid-column:1;grid-row:1 / 3}.map-metrics{grid-column:2;grid-row:2;align-self:end;grid-template-columns:1fr;margin-bottom:14px;border-top:0}.map-label p{min-height:0}}
+@media(max-width:640px){.view-nav{gap:9px}.view-switch{width:100%;}.view-switch button{flex:1;padding:10px 8px}.view-nav>.btn{margin-left:0;width:100%}.comparison-map{display:block}.map-label{padding:16px 18px 0}.map-metrics{grid-template-columns:1fr 1fr;border-top:1px solid #d9d0b7;margin:0}.map-label p{min-height:0}.insight-grid{grid-template-columns:1fr;gap:22px}.shot-results th,.shot-results td{padding:10px 9px;font-size:12px}.comparison p{font-size:14px}.map-toolbar{gap:12px}.map-legend{gap:10px;font-size:11px}}
