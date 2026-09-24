@@ -2,7 +2,7 @@
 
 **Team Popeyes (Lead): Tanish Singh Rajpal**
 
-Member: Paul Jeon
+Members: Paul Jeon, Sumedhaa Ruhil.
 
 Q-SITE 2026 · Quantum Coalition Scientific Track
 
@@ -12,7 +12,7 @@ Carnegie Mellon University, Information Networking Institute
 
 ![Phase Hunter nautical interface with measured points and an educational reaction](figures/gameplay.png)
 
-The game exposes a real inference problem: how much can you learn about a quantum magnet from a small number of noisy measurements? Drag five boundary handles, reveal your map score, and retry the same map to improve your strategy. No build step or account is needed.
+The first round is **Scan → Draw → Reveal**: one clean map, one scan strength and three clues before revealing. Stage choices, shot strengths and the AI appear after the first reveal; experienced players can skip ahead. No build step or account is needed.
 
 <details>
 <summary>Watch a current gameplay recording</summary>
@@ -27,7 +27,7 @@ The game exposes a real inference problem: how much can you learn about a quantu
 - [Three-page writeup](docs/Phase_Hunter_Writeup.pdf).
 - [Playable browser experiment](game/index.html).
 - Presentation video: still to be recorded.
-- Team roster: **Team Popeyes, solo — Tanish Singh Rajpal**.
+- Team roster: **Team Popeyes — Tanish Singh Rajpal, Paul Jeon, Sumedhaa Ruhil**.
 
 ## Questions and contributions
 
@@ -232,6 +232,8 @@ Five stages cover clean N=8, N=8 with 1% or 5% gate noise, frustrated clean N=6,
 Practice supplies labels and 90 energy; Hunter removes hints and supplies 60. Weak/solid/deep scans cost 1/2/4 energy for 20/100/500 shots. The AI spends the same energy on the same map: 45 solid scans in Practice or 30 in Hunter. Its scans animate and remain visible until **Your turn — same map** restores the player's budget. Retry preserves the target; New map clears it.
 
 On a first visit, a short guided round opens on a clean map: three scans, one boundary guess, then the result. The advanced controls stay tucked away until the first reveal, and the intro can be replayed from the controls whenever the demo needs a reset.
+
+After revealing, **Why noise changes the map** opens the interactive clean/noisy/corrected comparison and its finite-shot study. Returning players can replay the first voyage or skip directly to the full controls.
 
 **Start presentation demo** selects the full clean N=8 game map, fixes scans at 100 shots, seeds the measurements for repeatability and turns reactions off. Both player and AI receive **45 scans × 100 shots = 4,500 shots per side**. Restarting the fixed map repeats the demonstration; exiting restores the saved play preferences. The game score is labeled as reference-map agreement. The comparison's clean panel instead uses the variational circuit archive described above.
 
