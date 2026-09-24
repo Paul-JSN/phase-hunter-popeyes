@@ -9,6 +9,9 @@ from __future__ import annotations
 import io
 import math
 import pathlib
+import threading
+from functools import partial
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from PIL import Image
 from playwright.sync_api import sync_playwright
 ROOT=pathlib.Path(__file__).resolve().parents[1]
@@ -46,11 +49,9 @@ def gameplay(page):
         for _ in range(n):
             frames.append(page.screenshot(clip=clip));page.wait_for_timeout(FRAME_MS)
     grab(3)
-    page.locator('[data-shots="20"]').click()
     for fx,fy in [(.22,.78),(.33,.62),(.44,.52),(.58,.46),(.72,.62),(.86,.74)]:
         panel(page);b=page.locator('#board').bounding_box()
         page.mouse.click(b['x']+b['width']*fx,b['y']+b['height']*fy);grab(3)
-    page.locator('[data-shots="500"]').click()
     panel(page);b=page.locator('#board').bounding_box()
     page.mouse.click(b['x']+b['width']*.50,b['y']+b['height']*.35);grab(4)
     # The initial middle handle sits halfway along the actual canvas plot area.
@@ -62,7 +63,7 @@ def gameplay(page):
     page.mouse.up();grab(3)
     # Include the full branding and upper game in the README's still preview.
     page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(150)
-    page.screenshot(path=str(FIGURES/'gameplay.png'))
+    page.screenshot(path=str(FIGURES/'gameplay.png'),full_page=True)
     page.locator('#reveal').click();page.wait_for_timeout(200)
     for _ in range(14):frames.append(page.screenshot());page.wait_for_timeout(FRAME_MS)
     # Result is captured at the same output dimensions as the board sequence.
@@ -80,11 +81,35 @@ def memes(page):
 
 def main():
     FIGURES.mkdir(exist_ok=True)
-    with sync_playwright() as pw:
-        browser=pw.chromium.launch()
-        page=browser.new_page(viewport={'width':1280,'height':1000},device_scale_factor=1)
-        page.goto((ROOT/'game/index.html').as_uri());page.wait_for_function('window.PHASE_HUNTER_DATA && document.querySelector("#shots button")')
-        dismiss(page);save(gameplay(page),FIGURES/'gameplay.gif',900)
-        page.reload();dismiss(page);save(memes(page),FIGURES/'memes.gif',600,ms=150)
-        browser.close()
+    class QuietHandler(SimpleHTTPRequestHandler):
+        def log_message(self,*args):pass
+    # Serve only the project over loopback; no file:// browser access is needed.
+    server=ThreadingHTTPServer(('127.0.0.1',0),partial(QuietHandler,directory=str(ROOT)))
+    thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+    url=f'http://localhost:{server.server_port}/game/index.html'
+    try:
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch()
+            page=browser.new_page(viewport={'width':1280,'height':1000},device_scale_factor=1)
+            errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
+            page.goto(url);page.wait_for_function('window.PHASE_HUNTER_DATA && document.querySelector("#shots button")')
+            dismiss(page);save(gameplay(page),FIGURES/'gameplay.gif',900)
+            page.locator('#resultCompare').click();page.locator('#mapClean').wait_for(state='visible')
+            page.locator('#doc').screenshot(path=str(FIGURES/'noise_comparison_ui.png'))
+            page.locator('#noise01').click();assert 'worsens' in page.locator('#shotResult').inner_text()
+            page.locator('#sample500').click();assert '288,000' in page.locator('#shotCost').text_content()
+            page.locator('#tryNoisy').click();assert page.locator('#levels .active').inner_text().startswith('2. Static')
+            mobile=browser.new_page(viewport={'width':390,'height':844},device_scale_factor=1)
+            mobile.goto(url);mobile.locator('#firstGuide').wait_for(state='visible')
+            assert mobile.evaluate('document.documentElement.scrollWidth<=window.innerWidth'), 'Mobile overflow'
+            mobile.locator('#skipIntro').click();mobile.locator('#compareNoise').click()
+            assert mobile.locator('#mapClean').is_visible()
+            assert mobile.evaluate('document.querySelector("#doc").scrollWidth<=document.querySelector("#doc").clientWidth'), 'Comparison overflow'
+            mobile.close()
+            page.reload();dismiss(page);save(memes(page),FIGURES/'memes.gif',600,ms=150)
+            assert not errors,errors
+            print('Desktop and 390px layout, comparison controls, stage handoff, and browser error checks passed.')
+            browser.close()
+    finally:
+        server.shutdown();server.server_close()
 if __name__=='__main__':main()
