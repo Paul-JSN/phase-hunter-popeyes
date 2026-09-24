@@ -36,6 +36,19 @@ async function drain(){
 async function main(){
   assert.equal(elements.board.width,1440,'retina bitmap has two pixels per CSS pixel');
   assert.equal(elements.board.height,1120);
+  // The first visit starts with a guided three-scan clean-map round.
+  assert.equal(read('firstVoyage'), true);
+  assert.equal(read('view.b0'), 0);
+  assert.equal(read('view.b1'), 23);
+  assert.equal(read('shots'), 100);
+  assert.equal(elements.firstGuide.hidden, false);
+  assert.equal(elements.reveal.disabled, true);
+  read('shots=20');
+  read('ping(kLo(),hLo())');
+  assert.equal(read('shots'), 100);
+  read('newRound()');
+  // Existing gameplay regression coverage uses the full controls after dismissing the first-voyage guide.
+  elements.skipIntro.onclick();
   // Resizing and changing screen density preserve data coordinates and drag hit targets.
   const resizeView=read('JSON.stringify(view)');
   const resizeHandles=read('JSON.stringify(handles)');
